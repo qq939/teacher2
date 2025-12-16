@@ -26,6 +26,12 @@ def get_history():
     data = assistant.get_history(start_date, end_date)
     return jsonify(data)
 
+@app.route('/open/api/analyz', methods=['POST'])
+def open_api_analyze():
+    data = request.get_json(force=True, silent=True) or {}
+    sentence = data.get('sentence', '')
+    return render_template('index.html', auto_sentence=sentence)
+
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
     data = request.json
@@ -37,11 +43,7 @@ def analyze():
     print(result, flush=True)
     return jsonify(result)
 
-@app.route('/open/api/analyz', methods=['POST'])
-def open_api_analyze():
-    data = request.get_json(force=True, silent=True) or {}
-    sentence = data.get('sentence', '')
-    return render_template('index.html', auto_sentence=sentence)
+
 
 @app.route('/api/submit_quiz', methods=['POST'])
 def submit_quiz():
