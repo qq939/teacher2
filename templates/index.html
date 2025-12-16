@@ -172,76 +172,6 @@
             margin-top: 5px;
         }
 
-        /* History Styles */
-        #filter-area {
-            padding: 10px 0;
-            border-bottom: 1px solid #050;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-
-        input[type="date"] {
-            background: #000;
-            border: 1px solid #050;
-            color: #0f0;
-            padding: 4px;
-            font-family: 'Courier New', Courier, monospace;
-        }
-
-        .history-entry {
-            border: 1px solid #050;
-            margin-bottom: 15px;
-            padding: 15px;
-        }
-        
-        .entry-header {
-            color: #aaa;
-            font-size: 12px;
-            margin-bottom: 10px;
-            border-bottom: 1px dashed #030;
-            padding-bottom: 5px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .entry-sentence {
-            color: #fff;
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-
-        .entry-vocab {
-            font-size: 14px;
-            color: #0f0;
-        }
-        
-        /* Tabs */
-        .tab-btn {
-            background: transparent;
-            border: 1px solid #050;
-            color: #050;
-            padding: 5px 15px;
-            cursor: pointer;
-            font-family: 'Courier New', Courier, monospace;
-            margin-right: 5px;
-        }
-        .tab-btn.active {
-            border-color: #0f0;
-            color: #0f0;
-            background: #000;
-            border-bottom: 1px solid #000;
-            position: relative;
-            top: 1px;
-        }
-        .tab-container {
-            border-bottom: 1px solid #0f0;
-            display: flex;
-            margin-bottom: 15px;
-        }
-
         /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -289,27 +219,12 @@
     </div>
 
     <div id="log-area">
-        <div class="tab-container">
-            <button class="tab-btn active" onclick="switchTab('current')">日志</button>
-            <button class="tab-btn" onclick="switchTab('history')">历史日志</button>
+        <div style="color: #0f0; border-bottom: 1px solid #0f0; padding-bottom: 5px; margin-bottom: 10px; display: flex; align-items: center;">
+            <span style="font-size: 16px; font-weight: bold; margin-right: 15px;">日志</span>
+            <a href="/history" style="font-size: 12px; color: #0f0; text-decoration: none; border: 1px solid #050; padding: 2px 8px; margin-right: auto;">[ 历史日志 ]</a>
         </div>
-        
         <div id="logs-content">
             <!-- Logs will appear here -->
-        </div>
-
-        <div id="history-content" style="display: none;">
-            <div id="filter-area">
-                <label>Start:</label>
-                <input type="date" id="start-date">
-                <label>End:</label>
-                <input type="date" id="end-date">
-                <button id="btn-filter">[ Filter ]</button>
-                <button id="btn-download" style="margin-left: auto;">[ Download JSON ]</button>
-            </div>
-            <div id="history-list">
-                <!-- History entries -->
-            </div>
         </div>
     </div>
     
