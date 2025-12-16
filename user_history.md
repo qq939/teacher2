@@ -43,3 +43,6 @@ Action:
 2025年12月16日 星期二 22时42分20秒 CST
 User Request: 兼容一下http
 Action: 由于已移除音频功能，HTTPS 不再强制。在 app.py 中注释掉 SSL 证书加载逻辑，默认回退到 HTTP 协议。
+2025年12月16日 星期二 22时42分20秒 CST
+User Request: 要同时兼容http和https请求
+Action: 修改 app.py，使用 threading 同时启动 HTTP (5010端口) 和 HTTPS (5011端口) 服务。
