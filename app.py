@@ -56,26 +56,10 @@ def submit_quiz():
 
 
 
-import threading
-
-def run_http():
-    logger.info("Starting HTTP server on port 5010")
-    app.run(host='0.0.0.0', port=5010, debug=False, threaded=True)
-
-def run_https():
+if __name__ == '__main__':
     cert_path = os.path.join(os.path.dirname(__file__), 'cert', 'cert.pem')
     key_path = os.path.join(os.path.dirname(__file__), 'cert', 'key.pem')
+    ssl_ctx = None
     if os.path.exists(cert_path) and os.path.exists(key_path):
         ssl_ctx = (cert_path, key_path)
-        logger.info("Starting HTTPS server on port 5011")
-        app.run(host='0.0.0.0', port=5011, debug=False, threaded=True, ssl_context=ssl_ctx)
-    else:
-        logger.warning("SSL certificates not found, skipping HTTPS server")
-
-if __name__ == '__main__':
-    # Start HTTPS in a separate thread
-    https_thread = threading.Thread(target=run_https)
-    https_thread.start()
-    
-    # Run HTTP in main thread
-    run_http()
+    app.run(host='0.0.0.0', port=5010, debug=False)
