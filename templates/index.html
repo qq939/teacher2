@@ -228,6 +228,9 @@
         </div>
     </div>
     
+    <script>
+        window.autoSentence = {{ auto_sentence | tojson | safe if auto_sentence else 'null' }};
+    </script>
     <script src="/static/js/main.js"></script>
 </body>
 </html>

@@ -47,6 +47,15 @@ sentenceInput.addEventListener('keydown', (e) => {
     }
 });
 
+// Check for autoSentence from server
+if (window.autoSentence) {
+    sentenceInput.value = window.autoSentence;
+    // Small delay to ensure UI is ready
+    setTimeout(() => {
+        submitSentence();
+    }, 100);
+}
+
 async function submitSentence() {
     const sentence = sentenceInput.value.trim();
     if (!sentence) return;

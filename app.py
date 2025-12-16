@@ -37,6 +37,12 @@ def analyze():
     print(result, flush=True)
     return jsonify(result)
 
+@app.route('/open/api/analyz', methods=['POST'])
+def open_api_analyze():
+    data = request.get_json(force=True, silent=True) or {}
+    sentence = data.get('sentence', '')
+    return render_template('index.html', auto_sentence=sentence)
+
 @app.route('/api/submit_quiz', methods=['POST'])
 def submit_quiz():
     data = request.json
