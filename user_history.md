@@ -34,3 +34,12 @@ UI调整：输入框和提交按钮放置在同一行
 UI调整：历史日志页面中高亮显示词汇
 2025年12月16日 星期二 21时36分08秒 CST
 UI优化：合并历史日志为 Tab 页签 (SPA模式)
+2025年12月16日 星期二 22时42分20秒 CST
+User Request: 写一个接口/open/api/analyz，post json字符串，打开index并自动向/api/analyze post数据
+Action: 
+1. app.py: 添加 /open/api/analyz 接口，接收 POST JSON，渲染 index.html 并注入 auto_sentence。
+2. index.html: 接收 auto_sentence 并赋值给 window.autoSentence。
+3. main.js: 页面加载时检查 window.autoSentence，如果有则自动填充并提交。
+2025年12月16日 星期二 22时42分20秒 CST
+User Request: 兼容一下http
+Action: 由于已移除音频功能，HTTPS 不再强制。在 app.py 中注释掉 SSL 证书加载逻辑，默认回退到 HTTP 协议。

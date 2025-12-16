@@ -57,9 +57,9 @@ def submit_quiz():
 
 
 if __name__ == '__main__':
-    cert_path = os.path.join(os.path.dirname(__file__), 'cert', 'cert.pem')
-    key_path = os.path.join(os.path.dirname(__file__), 'cert', 'key.pem')
+    # cert_path = os.path.join(os.path.dirname(__file__), 'cert', 'cert.pem')
+    # key_path = os.path.join(os.path.dirname(__file__), 'cert', 'key.pem')
     ssl_ctx = None
-    if os.path.exists(cert_path) and os.path.exists(key_path):
-        ssl_ctx = (cert_path, key_path)
+    # if os.path.exists(cert_path) and os.path.exists(key_path):
+    #     ssl_ctx = (cert_path, key_path)
     app.run(host='0.0.0.0', port=5010, debug=False, threaded=True, ssl_context=ssl_ctx)
