@@ -1,0 +1,9 @@
+flask
+flask-sock
+sounddevice
+numpy
+websocket-client
+langchain
+langchain-openai
+langchain_core
+dotenv
