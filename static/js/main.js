@@ -23,6 +23,113 @@ const btnSubmit = document.getElementById('btn-submit');
 const sentenceInput = document.getElementById('sentence-input');
 const logsContent = document.getElementById('logs-content');
 const stagingArea = document.getElementById('staging-area');
+const tabLog = document.getElementById('tab-log');
+const tabHistory = document.getElementById('tab-history');
+const historyContent = document.getElementById('history-content');
+const historyHint = document.getElementById('history-hint');
+const historyList = document.getElementById('history-list');
+const historyStart = document.getElementById('history-start');
+const historyEnd = document.getElementById('history-end');
+const historyFilterBtn = document.getElementById('history-filter-btn');
+const historyDownloadBtn = document.getElementById('history-download-btn');
+let historyCache = [];
+
+function initHistoryView() {
+    if (!historyList || !historyStart || !historyEnd) return;
+    if (!historyStart.value || !historyEnd.value) {
+        const today = new Date();
+        const lastMonth = new Date();
+        lastMonth.setDate(today.getDate() - 30);
+        historyEnd.valueAsDate = today;
+        historyStart.valueAsDate = lastMonth;
+    }
+    loadHistoryData();
+}
+
+async function loadHistoryData() {
+    if (!historyList || !historyStart || !historyEnd) return;
+    const start = historyStart.value;
+    const end = historyEnd.value;
+    historyList.innerHTML = '<div style="color:#0f0;">Loading...</div>';
+    try {
+        const res = await fetch(`/api/history?start_date=${start}&end_date=${end}`);
+        historyCache = await res.json();
+        renderHistoryList(historyCache);
+        if (historyHint) historyHint.textContent = `共 ${historyCache.length} 条历史记录`;
+    } catch (err) {
+        historyList.innerHTML = `<div style="color:#f00;">Error: ${err.message}</div>`;
+    }
+}
+
+function renderHistoryList(data) {
+    if (!historyList) return;
+    historyList.innerHTML = '';
+    if (!data || data.length === 0) {
+        historyList.innerHTML = '<div style="color:#aaa;">No records found.</div>';
+        return;
+    }
+    const sorted = [...data].sort((a, b) => {
+        const ta = new Date(a.timestamp).getTime() || a.timestamp;
+        const tb = new Date(b.timestamp).getTime() || b.timestamp;
+        return tb - ta;
+    });
+    sorted.forEach(entry => {
+        const div = document.createElement('div');
+        div.style.border = '1px solid #050';
+        div.style.marginBottom = '10px';
+        div.style.padding = '10px';
+        let ts = entry.timestamp;
+        if (typeof ts === 'number') {
+            ts = new Date(ts * 1000).toLocaleString();
+        }
+        let vocabHtml = '';
+        let words = [];
+        if (Array.isArray(entry.vocabulary)) {
+            vocabHtml = entry.vocabulary.join(', ');
+            words = [...entry.vocabulary];
+        } else if (entry.vocabulary && typeof entry.vocabulary === 'object') {
+            vocabHtml = Object.keys(entry.vocabulary).map(w => `${w} (${entry.vocabulary[w]})`).join(', ');
+            words = Object.keys(entry.vocabulary);
+        }
+        let sentenceHtml = entry.sentence || '';
+        words.sort((a, b) => b.length - a.length);
+        words.forEach(word => {
+            if (!word) return;
+            const escaped = word.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
+            const regex = new RegExp(`\\\\b${escaped}\\\\b`, 'gi');
+            sentenceHtml = sentenceHtml.replace(regex, `<span style=\"color: #0f0; font-weight: bold;\">$&</span>`);
+        });
+        div.innerHTML = `
+            <div style="color:#aaa;font-size:12px;margin-bottom:5px;display:flex;justify-content:space-between;border-bottom:1px dashed #030;padding-bottom:3px;">
+                <span>Time: ${ts}</span>
+                <span>Source: ${entry.source || 'Unknown'}</span>
+            </div>
+            <div style="color:#fff;font-size:14px;margin-bottom:5px;">${sentenceHtml}</div>
+            <div style="color:#0f0;font-size:12px;">Vocabulary: ${vocabHtml || 'None'}</div>
+        `;
+        historyList.appendChild(div);
+    });
+}
+
+if (historyFilterBtn) {
+    historyFilterBtn.addEventListener('click', loadHistoryData);
+}
+
+if (historyDownloadBtn) {
+    historyDownloadBtn.addEventListener('click', () => {
+        if (!historyCache || historyCache.length === 0) {
+            alert('No data to download!');
+            return;
+        }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(historyCache, null, 2));
+        const a = document.createElement('a');
+        a.setAttribute('href', dataStr);
+        a.setAttribute('download', 'history_export.json');
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    });
+}
 
 // Quiz State
 let currentQuizData = null;
@@ -52,6 +159,29 @@ if (sentenceInput) {
         if (e.key === 'Enter') {
             submitSentence();
         }
+    });
+}
+
+if (tabLog && tabHistory && logsContent && historyContent) {
+    tabLog.addEventListener('click', () => {
+        tabLog.style.borderColor = '#0f0';
+        tabLog.style.color = '#0f0';
+        tabHistory.style.borderColor = '#050';
+        tabHistory.style.color = '#050';
+        logsContent.style.display = 'block';
+        historyContent.style.display = 'none';
+        if (historyHint) historyHint.textContent = '';
+    });
+    tabHistory.addEventListener('click', () => {
+        tabLog.style.borderColor = '#050';
+        tabLog.style.color = '#050';
+        tabHistory.style.borderColor = '#0f0';
+        tabHistory.style.color = '#0f0';
+        logsContent.style.display = 'none';
+        historyContent.style.display = 'flex';
+        historyContent.style.flexDirection = 'column';
+        if (historyHint) historyHint.textContent = '加载最近30天历史记录中...';
+        initHistoryView();
     });
 }
 

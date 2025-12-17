@@ -52,3 +52,11 @@ Action: 清理 main.js 中残留的音频和 canvas 相关代码，添加对 sen
 2025年12月16日 星期二 22时42分20秒 CST
 User Request: 那些旧代码不能删，就修复autoSentence就可以了
 Action: 恢复 static/js/main.js 中的所有音频/可视化代码，并添加空值检查以防止报错。同时保留并修复 autoSentence 逻辑。
+2025年12月17日 星期三 14时10分00秒 CST
+User Request: 仍然报错：/open/api/analyz端口报错，The URL \"file:///history\" is missing a hostname.
+Action:
+1. templates/index.html: 添加 base URL，并将 /history 与 main.js 引用改为绝对 URL；auto_sentence 改为 meta 注入。
+2. static/js/main.js: 从 meta 读取 autoSentence；WebSocket 在 file:// 场景下从 document.baseURI 推导服务端地址。
+2025年12月17日 星期三 14时40分00秒 CST
+User Request: /open/api/analyz 报错 TemplateNotFound: `http://teacher.dimond.top/index.html`
+Action: app.py: /open/api/analyz 改回渲染本地模板 index.html，并注入 auto_sentence。
