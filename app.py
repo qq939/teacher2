@@ -31,6 +31,15 @@ def get_history():
 def check_history():
     return jsonify(assistant.check_history())
 
+@app.route('/api/delete_word', methods=['POST'])
+def delete_word():
+    data = request.get_json(force=True, silent=True) or {}
+    word = data.get('word', '')
+    dry_run = bool(data.get('dry_run', False))
+    result = assistant.delete_word_from_history(word, dry_run=dry_run)
+    status = 200 if result.get('status') == 'success' else 400
+    return jsonify(result), status
+
 @app.route('/open/api/analyz', methods=['POST'])
 def open_api_analyze():
     data = request.get_json(force=True, silent=True) or {}

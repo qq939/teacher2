@@ -4,6 +4,7 @@ const logsContent = document.getElementById('logs-content');
 const stagingArea = document.getElementById('staging-area');
 const tabLog = document.getElementById('tab-log');
 const tabHistory = document.getElementById('tab-history');
+const tabVocab = document.getElementById('tab-vocab');
 const historyContent = document.getElementById('history-content');
 const historyHint = document.getElementById('history-hint');
 const historyList = document.getElementById('history-list');
@@ -11,7 +12,12 @@ const historyStart = document.getElementById('history-start');
 const historyEnd = document.getElementById('history-end');
 const historyFilterBtn = document.getElementById('history-filter-btn');
 const historyDownloadBtn = document.getElementById('history-download-btn');
+const vocabContent = document.getElementById('vocab-content');
+const vocabList = document.getElementById('vocab-list');
+const vocabHint = document.getElementById('vocab-hint');
+const vocabRefreshBtn = document.getElementById('vocab-refresh-btn');
 let historyCache = [];
+let vocabCache = [];
 
 function escapeHtml(str) {
     return String(str)
@@ -49,6 +55,10 @@ function initHistoryView() {
     loadHistoryData();
 }
 
+function initVocabView() {
+    loadVocabData();
+}
+
 async function loadHistoryData() {
     if (!historyList || !historyStart || !historyEnd) return;
     const start = historyStart.value;
@@ -61,6 +71,19 @@ async function loadHistoryData() {
         if (historyHint) historyHint.textContent = `共 ${historyCache.length} 条历史记录`;
     } catch (err) {
         historyList.innerHTML = `<div style="color:#f00;">Error: ${err.message}</div>`;
+    }
+}
+
+async function loadVocabData() {
+    if (!vocabList) return;
+    vocabList.innerHTML = '<div style="color:#0f0;">Loading...</div>';
+    try {
+        const res = await fetch('/api/check_history');
+        vocabCache = await res.json();
+        renderVocabList(vocabCache);
+        if (vocabHint) vocabHint.textContent = `共 ${vocabCache.length} 个生词`;
+    } catch (err) {
+        vocabList.innerHTML = `<div style="color:#f00;">Error: ${err.message}</div>`;
     }
 }
 
@@ -113,6 +136,44 @@ function renderHistoryList(data) {
     });
 }
 
+function renderVocabList(data) {
+    if (!vocabList) return;
+    vocabList.innerHTML = '';
+    if (!data || data.length === 0) {
+        vocabList.innerHTML = '<div style="color:#aaa;">No words found.</div>';
+        return;
+    }
+
+    data.forEach(item => {
+        const word = item && item.word ? String(item.word) : '';
+        const count = item && item.count !== undefined ? item.count : '';
+        if (!word) return;
+
+        const row = document.createElement('div');
+        row.className = 'vocabbook-row';
+
+        const btn = document.createElement('button');
+        btn.className = 'vocabbook-trash vocab-delete-btn';
+        btn.type = 'button';
+        btn.title = 'Delete';
+        btn.textContent = '🗑';
+        btn.dataset.word = word;
+
+        const wordSpan = document.createElement('span');
+        wordSpan.className = 'vocabbook-word';
+        wordSpan.textContent = word;
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'vocabbook-count';
+        countSpan.textContent = `(${count})`;
+
+        row.appendChild(btn);
+        row.appendChild(wordSpan);
+        row.appendChild(countSpan);
+        vocabList.appendChild(row);
+    });
+}
+
 if (historyFilterBtn) {
     historyFilterBtn.addEventListener('click', loadHistoryData);
 }
@@ -133,6 +194,42 @@ if (historyDownloadBtn) {
     });
 }
 
+if (vocabRefreshBtn) {
+    vocabRefreshBtn.addEventListener('click', loadVocabData);
+}
+
+if (vocabList) {
+    vocabList.addEventListener('click', async (e) => {
+        const btn = e.target && e.target.closest ? e.target.closest('.vocab-delete-btn') : null;
+        if (!btn) return;
+        const word = (btn.dataset && btn.dataset.word) ? btn.dataset.word : '';
+        if (!word) return;
+        btn.disabled = true;
+        try {
+            const res = await fetch('/api/delete_word', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ word })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data && data.error ? data.error : 'Delete failed');
+                return;
+            }
+            await loadVocabData();
+            if (historyContent && historyContent.style.display !== 'none') {
+                await loadHistoryData();
+            }
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+}
+
 // Quiz State
 let currentQuizData = null;
 let currentQuizResults = [];
@@ -150,26 +247,48 @@ if (sentenceInput) {
     });
 }
 
-if (tabLog && tabHistory && logsContent && historyContent) {
+if (tabLog && tabHistory && tabVocab && logsContent && historyContent && vocabContent) {
     tabLog.addEventListener('click', () => {
         tabLog.style.borderColor = '#0f0';
         tabLog.style.color = '#0f0';
         tabHistory.style.borderColor = '#050';
         tabHistory.style.color = '#050';
+        tabVocab.style.borderColor = '#050';
+        tabVocab.style.color = '#050';
         logsContent.style.display = 'block';
         historyContent.style.display = 'none';
+        vocabContent.style.display = 'none';
         if (historyHint) historyHint.textContent = '';
+        if (vocabHint) vocabHint.textContent = '';
     });
     tabHistory.addEventListener('click', () => {
         tabLog.style.borderColor = '#050';
         tabLog.style.color = '#050';
         tabHistory.style.borderColor = '#0f0';
         tabHistory.style.color = '#0f0';
+        tabVocab.style.borderColor = '#050';
+        tabVocab.style.color = '#050';
         logsContent.style.display = 'none';
         historyContent.style.display = 'flex';
         historyContent.style.flexDirection = 'column';
+        vocabContent.style.display = 'none';
         if (historyHint) historyHint.textContent = '加载最近30天历史记录中...';
         initHistoryView();
+    });
+    tabVocab.addEventListener('click', () => {
+        tabLog.style.borderColor = '#050';
+        tabLog.style.color = '#050';
+        tabHistory.style.borderColor = '#050';
+        tabHistory.style.color = '#050';
+        tabVocab.style.borderColor = '#0f0';
+        tabVocab.style.color = '#0f0';
+        logsContent.style.display = 'none';
+        historyContent.style.display = 'none';
+        vocabContent.style.display = 'flex';
+        vocabContent.style.flexDirection = 'column';
+        if (historyHint) historyHint.textContent = '';
+        if (vocabHint) vocabHint.textContent = '加载生词本中...';
+        initVocabView();
     });
 }
 
