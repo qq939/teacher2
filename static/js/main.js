@@ -156,8 +156,17 @@ function renderVocabList(data) {
         btn.className = 'vocabbook-trash vocab-delete-btn';
         btn.type = 'button';
         btn.title = 'Delete';
-        btn.textContent = '🗑';
         btn.dataset.word = word;
+
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M9 3h6l1 2h5v2H3V5h5l1-2zm1 6h2v10h-2V9zm4 0h2v10h-2V9zM7 9h2v10H7V9zM6 7h12l-1 14H7L6 7z');
+        svg.appendChild(path);
+        btn.appendChild(svg);
 
         const wordSpan = document.createElement('span');
         wordSpan.className = 'vocabbook-word';
