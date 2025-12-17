@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 import logging
 import os
-from urllib.parse import quote
+import datetime
 from assistant import assistant
+
 sentence_dict = {}
 idlist = []
 app = Flask(__name__)
