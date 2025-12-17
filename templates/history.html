@@ -154,13 +154,28 @@
         const startDateInput = document.getElementById('start-date');
         const endDateInput = document.getElementById('end-date');
 
-        // Set default dates (last 30 days)
-        const today = new Date();
-        const lastMonth = new Date();
-        lastMonth.setDate(today.getDate() - 30);
+        // Set default dates
+        // Start: 1 month and 1 day ago
+        // End: Tomorrow
+        const now = new Date();
         
-        endDateInput.valueAsDate = today;
-        startDateInput.valueAsDate = lastMonth;
+        const startDate = new Date(now);
+        startDate.setMonth(startDate.getMonth() - 1);
+        startDate.setDate(startDate.getDate() - 1);
+        
+        const endDate = new Date(now);
+        endDate.setDate(endDate.getDate() + 1);
+        
+        // Use YYYY-MM-DD string to avoid UTC shift issues with valueAsDate
+        const toISODate = (d) => {
+             const year = d.getFullYear();
+             const month = String(d.getMonth() + 1).padStart(2, '0');
+             const day = String(d.getDate()).padStart(2, '0');
+             return `${year}-${month}-${day}`;
+        };
+
+        startDateInput.value = toISODate(startDate);
+        endDateInput.value = toISODate(endDate);
 
         btnFilter.addEventListener('click', loadHistory);
         btnDownload.addEventListener('click', downloadHistory);

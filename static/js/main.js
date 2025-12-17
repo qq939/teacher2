@@ -46,11 +46,24 @@ function highlightSentence(sentence, words) {
 function initHistoryView() {
     if (!historyList || !historyStart || !historyEnd) return;
     if (!historyStart.value || !historyEnd.value) {
-        const today = new Date();
-        const lastMonth = new Date();
-        lastMonth.setDate(today.getDate() - 30);
-        historyEnd.valueAsDate = today;
-        historyStart.valueAsDate = lastMonth;
+        const now = new Date();
+        
+        const startDate = new Date(now);
+        startDate.setMonth(startDate.getMonth() - 1);
+        startDate.setDate(startDate.getDate() - 1);
+        
+        const endDate = new Date(now);
+        endDate.setDate(endDate.getDate() + 1);
+
+        const toISODate = (d) => {
+             const year = d.getFullYear();
+             const month = String(d.getMonth() + 1).padStart(2, '0');
+             const day = String(d.getDate()).padStart(2, '0');
+             return `${year}-${month}-${day}`;
+        };
+
+        historyStart.value = toISODate(startDate);
+        historyEnd.value = toISODate(endDate);
     }
     loadHistoryData();
 }
