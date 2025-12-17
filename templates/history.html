@@ -167,6 +167,30 @@
 
         let currentData = [];
 
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function escapeRegExp(str) {
+            return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function highlightSentence(sentence, words) {
+            let html = escapeHtml(sentence || '');
+            const list = (Array.isArray(words) ? words : []).filter(Boolean).sort((a, b) => b.length - a.length);
+            list.forEach(word => {
+                const escaped = escapeRegExp(word);
+                const regex = new RegExp(`(^|[^A-Za-z0-9_])(${escaped})(?=[^A-Za-z0-9_]|$)`, 'gi');
+                html = html.replace(regex, `$1<span style="color:#0f0;font-weight:bold;">$2</span>`);
+            });
+            return html;
+        }
+
         async function loadHistory() {
             const start = startDateInput.value;
             const end = endDateInput.value;
@@ -210,28 +234,14 @@
                 
                 // Vocabulary can be dict (new) or list (old)
                 if (Array.isArray(entry.vocabulary)) {
-                    // Old format: List[str]
-                    vocabHtml = entry.vocabulary.join(', ');
                     wordsToHighlight = [...entry.vocabulary];
+                    vocabHtml = entry.vocabulary.map(w => `<span style="color:#0f0;font-weight:bold;">${escapeHtml(w)}</span>`).join(', ');
                 } else if (entry.vocabulary && typeof entry.vocabulary === 'object') {
-                    // New format: Dict[word, count]
-                    vocabHtml = Object.keys(entry.vocabulary).map(w => `${w} (${entry.vocabulary[w]})`).join(', ');
                     wordsToHighlight = Object.keys(entry.vocabulary);
+                    vocabHtml = Object.keys(entry.vocabulary).map(w => `<span style="color:#0f0;font-weight:bold;">${escapeHtml(w)}</span> (${entry.vocabulary[w]})`).join(', ');
                 }
 
-                // Highlight words in sentence
-                let sentenceHtml = entry.sentence;
-                // Sort by length desc to avoid partial replacement issues
-                wordsToHighlight.sort((a, b) => b.length - a.length);
-                
-                wordsToHighlight.forEach(word => {
-                    if (!word) return;
-                    // Escape special chars for regex
-                    const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    // Try to match whole word
-                    const regex = new RegExp(`\\b${escapedWord}\\b`, 'gi');
-                    sentenceHtml = sentenceHtml.replace(regex, `<span style="color: #0f0; font-weight: bold;">$&</span>`);
-                });
+                const sentenceHtml = highlightSentence(entry.sentence || '', wordsToHighlight);
 
                 div.innerHTML = `
                     <div class="entry-header">

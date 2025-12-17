@@ -1,24 +1,3 @@
-// Mr.Jiang Audio Stream Client
-
-const btnPlay = document.getElementById('btn-play');
-const btnStop = document.getElementById('btn-stop');
-const latencyVal = document.getElementById('latency-val');
-const canvas = document.getElementById('visualizer');
-// Safe context retrieval
-const canvasCtx = canvas ? canvas.getContext('2d') : null;
-
-let audioCtx = null;
-let workletNode = null;
-let scriptProcessor = null;
-let ws = null;
-let isPlaying = false;
-let analyser = null;
-let drawVisual = null;
-let queue = [];
-let buffer = new Float32Array(0);
-let lastTimestamp = 0;
-const maxQueueLength = 10;
-
 const btnSubmit = document.getElementById('btn-submit');
 const sentenceInput = document.getElementById('sentence-input');
 const logsContent = document.getElementById('logs-content');
@@ -33,6 +12,30 @@ const historyEnd = document.getElementById('history-end');
 const historyFilterBtn = document.getElementById('history-filter-btn');
 const historyDownloadBtn = document.getElementById('history-download-btn');
 let historyCache = [];
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function escapeRegExp(str) {
+    return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function highlightSentence(sentence, words) {
+    let html = escapeHtml(sentence || '');
+    const list = (Array.isArray(words) ? words : []).filter(Boolean).sort((a, b) => b.length - a.length);
+    list.forEach(word => {
+        const escaped = escapeRegExp(word);
+        const regex = new RegExp(`(^|[^A-Za-z0-9_])(${escaped})(?=[^A-Za-z0-9_]|$)`, 'gi');
+        html = html.replace(regex, `$1<span style="color:#0f0;font-weight:bold;">$2</span>`);
+    });
+    return html;
+}
 
 function initHistoryView() {
     if (!historyList || !historyStart || !historyEnd) return;
@@ -90,21 +93,14 @@ function renderHistoryList(data) {
             words = Object.keys(entry.vocabulary);
         }
         if (Array.isArray(entry.vocabulary)) {
-            vocabHtml = entry.vocabulary.map(w => `<span style="color:#0f0;font-weight:bold;">${w}</span>`).join(', ');
+            vocabHtml = entry.vocabulary.map(w => `<span style="color:#0f0;font-weight:bold;">${escapeHtml(w)}</span>`).join(', ');
         } else if (entry.vocabulary && typeof entry.vocabulary === 'object') {
             vocabHtml = Object.keys(entry.vocabulary).map(w => {
                 const c = entry.vocabulary[w];
-                return `<span style="color:#0f0;font-weight:bold;">${w}</span> (${c})`;
+                return `<span style="color:#0f0;font-weight:bold;">${escapeHtml(w)}</span> (${c})`;
             }).join(', ');
         }
-        let sentenceHtml = entry.sentence || '';
-        words.sort((a, b) => b.length - a.length);
-        words.forEach(word => {
-            if (!word) return;
-            const escaped = word.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
-            const regex = new RegExp(`\\\\b${escaped}\\\\b`, 'gi');
-            sentenceHtml = sentenceHtml.replace(regex, `<span style=\"color: #0f0; font-weight: bold;\">$&</span>`);
-        });
+        const sentenceHtml = highlightSentence(entry.sentence || '', words);
         div.innerHTML = `
             <div style="color:#aaa;font-size:12px;margin-bottom:5px;display:flex;justify-content:space-between;border-bottom:1px dashed #030;padding-bottom:3px;">
                 <span>Time: ${ts}</span>
@@ -141,20 +137,6 @@ if (historyDownloadBtn) {
 let currentQuizData = null;
 let currentQuizResults = [];
 let currentWordIndex = 0;
-
-// Adjust canvas size
-function resizeCanvas() {
-    if (!canvas || !canvas.parentElement) return;
-    canvas.width = canvas.parentElement.clientWidth;
-    canvas.height = canvas.parentElement.clientHeight;
-}
-if (canvas) {
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-}
-
-if (btnPlay) btnPlay.addEventListener('click', startStream);
-if (btnStop) btnStop.addEventListener('click', stopStream);
 
 // New Event Listeners for Assistant
 if (btnSubmit) {
@@ -515,261 +497,4 @@ function addLogEntry(text, type) {
     }
     
     logsContent.prepend(entry);
-}
-
-// ... Audio functions ...
-async function startStream() {
-    if (isPlaying) return;
-
-    // Reset state variables
-    queue = [];
-    buffer = new Float32Array(0);
-    lastTimestamp = 0;
-
-    try {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)({
-                sampleRate: 44100,
-                latencyHint: 'interactive'
-            });
-        }
-        
-        if (audioCtx.state === 'suspended') {
-            await audioCtx.resume();
-        }
-
-        let useWorklet = false;
-        try {
-            await audioCtx.audioWorklet.addModule('/static/worklet-processor.js');
-            workletNode = new AudioWorkletNode(audioCtx, 'pcm-player');
-            useWorklet = true;
-        } catch (e) {
-            scriptProcessor = audioCtx.createScriptProcessor(2048, 1, 1);
-            scriptProcessor.onaudioprocess = (ev) => {
-                const out = ev.outputBuffer.getChannelData(0);
-                let offset = 0;
-                while (offset < out.length) {
-                    if (buffer.length === 0) {
-                        if (queue.length === 0) {
-                            for (let i = 0; i < out.length; i++) out[i] = 0;
-                            break;
-                        } else {
-                            buffer = queue.shift();
-                        }
-                    }
-                    const need = out.length - offset;
-                    const avail = buffer.length;
-                    const n = Math.min(need, avail);
-                    out.set(buffer.subarray(0, n), offset);
-                    buffer = buffer.subarray(n);
-                    offset += n;
-                }
-            };
-        }
-        
-        // Create Analyser for visualization
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 2048;
-        
-        if (workletNode) {
-            workletNode.connect(analyser);
-        } else if (scriptProcessor) {
-            scriptProcessor.connect(analyser);
-        }
-        analyser.connect(audioCtx.destination);
-
-        // Start Visualization
-        visualize();
-
-        // Connect WebSocket
-        let httpOrigin = (window.location.protocol === 'http:' || window.location.protocol === 'https:') ? window.location.origin : '';
-        if (!httpOrigin) {
-            try {
-                const baseUrl = new URL(document.baseURI);
-                if (baseUrl.protocol === 'http:' || baseUrl.protocol === 'https:') {
-                    httpOrigin = baseUrl.origin;
-                }
-            } catch (e) {
-                httpOrigin = '';
-            }
-        }
-        if (!httpOrigin) {
-            throw new Error('Missing server origin');
-        }
-
-        const protocol = httpOrigin.startsWith('https:') ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${new URL(httpOrigin).host}/audio`;
-        
-        ws = new WebSocket(wsUrl);
-        ws.binaryType = 'arraybuffer';
-        
-        ws.onopen = () => {
-            console.log('Connected to server');
-            isPlaying = true;
-            updateUI(true);
-        };
-        
-        ws.onmessage = (event) => {
-            if (!isPlaying) return;
-            
-            // Parse payload: 8 bytes timestamp + Audio Data
-            const arrayBuffer = event.data;
-            const dataView = new DataView(arrayBuffer);
-            const timestamp = dataView.getFloat64(0, true); // Little Endian
-            
-            // Audio data starts at offset 8
-            // It's Int16, so we need to convert to Float32 [-1.0, 1.0]
-            const audioInt16 = new Int16Array(arrayBuffer, 8);
-            const audioFloat32 = new Float32Array(audioInt16.length);
-            
-            for (let i = 0; i < audioInt16.length; i++) {
-                audioFloat32[i] = audioInt16[i] / 32768.0;
-            }
-            
-            if (workletNode) {
-                if (timestamp < lastTimestamp) {
-                    return;
-                }
-                lastTimestamp = timestamp;
-                workletNode.port.postMessage({ timestamp, audioData: audioFloat32 });
-            } else if (scriptProcessor) {
-                if (timestamp < lastTimestamp) {
-                    return;
-                }
-                lastTimestamp = timestamp;
-                queue.push(audioFloat32);
-                if (queue.length > maxQueueLength) {
-                    const dropCount = queue.length - 2;
-                    queue = queue.slice(dropCount);
-                }
-            }
-            
-            // Calculate Latency (assuming synchronized clocks or localhost)
-            // timestamp is in seconds (float)
-            const now = Date.now() / 1000.0;
-            const latency = (now - timestamp) * 1000; // ms
-            
-            if (latencyVal) {
-                latencyVal.textContent = latency.toFixed(1);
-                
-                // Color code latency
-                if (latency < 700) {
-                    latencyVal.style.color = '#0f0';
-                } else {
-                    latencyVal.style.color = '#f00';
-                }
-            }
-        };
-        
-        ws.onclose = () => {
-            console.log('Disconnected');
-            stopStream();
-        };
-        
-        ws.onerror = (err) => {
-            console.error('WebSocket Error:', err);
-            stopStream();
-        };
-
-    } catch (err) {
-        console.error('Error starting stream:', err);
-        alert('Failed to start audio stream. See console for details.');
-    }
-}
-
-function stopStream() {
-    if (!isPlaying) return;
-    
-    if (ws) {
-        ws.close();
-        ws = null;
-    }
-    
-    if (workletNode) {
-        workletNode.disconnect();
-        workletNode = null;
-    }
-    if (scriptProcessor) {
-        scriptProcessor.disconnect();
-        scriptProcessor.onaudioprocess = null;
-        scriptProcessor = null;
-    }
-    
-    if (analyser) {
-        analyser.disconnect();
-        analyser = null;
-    }
-    
-    if (audioCtx) {
-        audioCtx.close().catch(err => console.error("Error closing AudioContext:", err));
-        audioCtx = null;
-    }
-    
-    isPlaying = false;
-    updateUI(false);
-    
-    // Clear canvas
-    if (canvasCtx) canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-    if (drawVisual) {
-        cancelAnimationFrame(drawVisual);
-    }
-    if (latencyVal) latencyVal.textContent = '--';
-}
-
-function updateUI(playing) {
-    if (btnPlay) {
-        btnPlay.disabled = playing;
-        if (playing) {
-            btnPlay.innerHTML = '[ STREAMING... ]';
-        } else {
-            btnPlay.innerHTML = '[ RECEIVE STREAM ]';
-        }
-    }
-    if (btnStop) {
-        btnStop.disabled = !playing;
-    }
-}
-
-function visualize() {
-    if (!analyser || !canvasCtx || !canvas) return;
-    
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    
-    function draw() {
-        if (!isPlaying) return;
-        
-        drawVisual = requestAnimationFrame(draw);
-        
-        analyser.getByteTimeDomainData(dataArray);
-        
-        canvasCtx.fillStyle = '#000'; // Black background
-        canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        canvasCtx.lineWidth = 2;
-        canvasCtx.strokeStyle = '#0f0'; // Green line
-        
-        canvasCtx.beginPath();
-        
-        const sliceWidth = canvas.width * 1.0 / bufferLength;
-        let x = 0;
-        
-        for(let i = 0; i < bufferLength; i++) {
-            const v = dataArray[i] / 128.0;
-            const y = v * canvas.height / 2;
-            
-            if(i === 0) {
-                canvasCtx.moveTo(x, y);
-            } else {
-                canvasCtx.lineTo(x, y);
-            }
-            
-            x += sliceWidth;
-        }
-        
-        canvasCtx.lineTo(canvas.width, canvas.height/2);
-        canvasCtx.stroke();
-    }
-    
-    draw();
 }
