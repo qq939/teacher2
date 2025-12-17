@@ -30,7 +30,10 @@ def get_history():
 def open_api_analyze():
     data = request.get_json(force=True, silent=True) or {}
     sentence = data.get('sentence', '')
-    return render_template('index.html', auto_sentence=sentence)
+
+    # target_url = f'http://teacher.dimond.top/index.html?auto_sentence={sentence}'
+    # return redirect(target_url)
+    return render_template('http://teacher.dimond.top/index.html', auto_sentence=sentence)
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
