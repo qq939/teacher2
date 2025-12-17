@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 import logging
 import os
 from assistant import assistant
@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    auto_sentence = request.args.get('auto_sentence')
+    return render_template('index.html', auto_sentence=auto_sentence)
 
 @app.route('/history')
 def history_page():
@@ -31,9 +32,7 @@ def open_api_analyze():
     data = request.get_json(force=True, silent=True) or {}
     sentence = data.get('sentence', '')
 
-    # target_url = f'http://teacher.dimond.top/index.html?auto_sentence={sentence}'
-    # return redirect(target_url)
-    return render_template('http://teacher.dimond.top/index.html', auto_sentence=sentence)
+    return redirect(url_for('index', auto_sentence=sentence), code=303)
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
