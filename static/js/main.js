@@ -56,6 +56,16 @@ if (sentenceInput) {
 }
 
 // Check for autoSentence from server
+if (window.autoSentence === undefined || window.autoSentence === null) {
+    const autoSentenceMeta = document.querySelector('meta[name="auto-sentence"]');
+    if (autoSentenceMeta) {
+        try {
+            window.autoSentence = JSON.parse(autoSentenceMeta.getAttribute('content') || 'null');
+        } catch (e) {
+            window.autoSentence = null;
+        }
+    }
+}
 if (window.autoSentence) {
     if (sentenceInput) {
         sentenceInput.value = window.autoSentence;
@@ -414,8 +424,23 @@ async function startStream() {
         visualize();
 
         // Connect WebSocket
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/audio`;
+        let httpOrigin = (window.location.protocol === 'http:' || window.location.protocol === 'https:') ? window.location.origin : '';
+        if (!httpOrigin) {
+            try {
+                const baseUrl = new URL(document.baseURI);
+                if (baseUrl.protocol === 'http:' || baseUrl.protocol === 'https:') {
+                    httpOrigin = baseUrl.origin;
+                }
+            } catch (e) {
+                httpOrigin = '';
+            }
+        }
+        if (!httpOrigin) {
+            throw new Error('Missing server origin');
+        }
+
+        const protocol = httpOrigin.startsWith('https:') ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${new URL(httpOrigin).host}/audio`;
         
         ws = new WebSocket(wsUrl);
         ws.binaryType = 'arraybuffer';
