@@ -105,10 +105,8 @@ def open_api_analyze():
     # 例如："10:40" 仍然是 "10%3A40"，避免在任何链路中被误解析。
     encoded = quote(sentence, safe='')
 
-    # 使用当前请求的 Host 生成 URL，避免硬编码域名带来的环境不一致。
-    # request.host_url 形如 "http(s)://teacher.dimond.top/"。
-    base = request.host_url.rstrip('/')
-    return f"{base}?auto_sentence={encoded}"
+
+    return f"http://teacher.dimond.top?auto_sentence={encoded}"
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
