@@ -69,10 +69,14 @@ if (window.autoSentence === undefined || window.autoSentence === null) {
 if (window.autoSentence) {
     if (sentenceInput) {
         sentenceInput.value = window.autoSentence;
-        // Small delay to ensure UI is ready
+        sentenceInput.focus();
         setTimeout(() => {
-            submitSentence();
-        }, 100);
+            if (btnSubmit) {
+                btnSubmit.click();
+            } else {
+                submitSentence();
+            }
+        }, 0);
     }
 }
 
