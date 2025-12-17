@@ -75,18 +75,25 @@ if (window.autoSentence === undefined || window.autoSentence === null) {
         }
     }
 }
-if (window.autoSentence) {
-    if (sentenceInput) {
-        sentenceInput.value = window.autoSentence;
-        sentenceInput.focus();
-        setTimeout(() => {
-            if (btnSubmit) {
-                btnSubmit.click();
-            } else {
-                submitSentence();
-            }
-        }, 0);
+if (window.autoSentence === undefined || window.autoSentence === null || window.autoSentence === '') {
+    try {
+        const urlSentence = new URLSearchParams(window.location.search).get('auto_sentence');
+        if (urlSentence) window.autoSentence = urlSentence;
+    } catch (e) {
+        // ignore
     }
+}
+if (window.autoSentence && sentenceInput && !window.__autoSentenceDidSubmit) {
+    window.__autoSentenceDidSubmit = true;
+    sentenceInput.value = String(window.autoSentence).replace(/[\r\n]+/g, ' ').trim();
+    sentenceInput.focus();
+    setTimeout(() => {
+        if (btnSubmit) {
+            btnSubmit.click();
+        } else {
+            submitSentence();
+        }
+    }, 0);
 }
 
 async function submitSentence() {
