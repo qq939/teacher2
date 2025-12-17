@@ -3,6 +3,7 @@ import logging
 import os
 import datetime
 from assistant import assistant
+import random
 
 sentence_dict = {}
 idlist = []
