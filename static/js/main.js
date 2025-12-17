@@ -1,16 +1,57 @@
 // Mr.Jiang Audio Stream Client
 
+const btnPlay = document.getElementById('btn-play');
+const btnStop = document.getElementById('btn-stop');
+const latencyVal = document.getElementById('latency-val');
+const canvas = document.getElementById('visualizer');
+// Safe context retrieval
+const canvasCtx = canvas ? canvas.getContext('2d') : null;
+
+let audioCtx = null;
+let workletNode = null;
+let scriptProcessor = null;
+let ws = null;
+let isPlaying = false;
+let analyser = null;
+let drawVisual = null;
+let queue = [];
+let buffer = new Float32Array(0);
+let lastTimestamp = 0;
+const maxQueueLength = 10;
+
 const btnSubmit = document.getElementById('btn-submit');
 const sentenceInput = document.getElementById('sentence-input');
 const logsContent = document.getElementById('logs-content');
+const stagingArea = document.getElementById('staging-area');
 
+// Quiz State
+let currentQuizData = null;
+let currentQuizResults = [];
+let currentWordIndex = 0;
+
+// Adjust canvas size
+function resizeCanvas() {
+    if (!canvas || !canvas.parentElement) return;
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
+}
+if (canvas) {
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+}
+
+if (btnPlay) btnPlay.addEventListener('click', startStream);
+if (btnStop) btnStop.addEventListener('click', stopStream);
+
+// New Event Listeners for Assistant
 if (btnSubmit) {
     btnSubmit.addEventListener('click', submitSentence);
 }
-
 if (sentenceInput) {
-    sentenceInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') submitSentence();
+    sentenceInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            submitSentence();
+        }
     });
 }
 
@@ -26,20 +67,25 @@ if (window.autoSentence) {
 }
 
 async function submitSentence() {
+    if (!sentenceInput) return;
     const sentence = sentenceInput.value.trim();
     if (!sentence) return;
 
     // UI Feedback
-    btnSubmit.disabled = true;
-    btnSubmit.innerHTML = '[ 分析中... ]';
+    if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '[ 分析中... ]';
+    }
     
     // Show staging area
-    stagingArea.style.display = 'block';
-    stagingArea.textContent = sentence;
-    stagingArea.style.color = '#0f0'; // Normal color
+    if (stagingArea) {
+        stagingArea.style.display = 'block';
+        stagingArea.textContent = sentence;
+        stagingArea.style.color = '#0f0'; // Normal color
+    }
     
     // Clear log area
-    logsContent.innerHTML = '';
+    if (logsContent) logsContent.innerHTML = '';
     
     // Clear token stats if any
     const existingStats = document.getElementById('token-stats');
@@ -75,9 +121,11 @@ async function submitSentence() {
         addLogEntry("Network Error: " + err.message, "system");
     } finally {
         // Reset UI
-        btnSubmit.disabled = false;
-        btnSubmit.innerHTML = '[ 提交识别 ]';
-        sentenceInput.value = '';
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '[ 提交识别 ]';
+        }
+        if (sentenceInput) sentenceInput.value = '';
     }
 }
 
@@ -118,6 +166,7 @@ function startQuiz(data) {
 }
 
 function showNextWordCard() {
+    if (!logsContent) return;
     if (currentWordIndex >= currentQuizData.words.length) {
         finishQuiz();
         return;
@@ -199,7 +248,7 @@ async function finishQuiz() {
         }))
     };
     
-    logsContent.innerHTML = '<div class="log-entry" style="color:#0f0;">Submitting results...</div>';
+    if (logsContent) logsContent.innerHTML = '<div class="log-entry" style="color:#0f0;">Submitting results...</div>';
     
     try {
         const response = await fetch('/api/submit_quiz', {
@@ -222,23 +271,26 @@ async function finishQuiz() {
 }
 
 function displayFinalSummary(responseData) {
+    if (!logsContent) return;
     logsContent.innerHTML = '';
     
     // 1. Show Sentence in logs
     addLogEntry(currentQuizData.sentence, "user");
     
     // 2. Show Staging Area (highlight wrong words if any)
-    let sentenceHtml = currentQuizData.sentence;
-    const wrongWords = currentQuizResults.filter(r => !r.isCorrect).map(r => r.word);
-    
-    // Simple replace for highlighting (case insensitive)
-    wrongWords.forEach(w => {
-        const regex = new RegExp(`\\b${w}\\b`, 'gi');
-        sentenceHtml = sentenceHtml.replace(regex, `<span style="color:#f00; border-bottom:1px dashed #f00;">$&</span>`);
-    });
-    
-    stagingArea.innerHTML = sentenceHtml;
-    stagingArea.style.color = wrongWords.length > 0 ? '#fff' : '#0f0';
+    if (stagingArea) {
+        let sentenceHtml = currentQuizData.sentence;
+        const wrongWords = currentQuizResults.filter(r => !r.isCorrect).map(r => r.word);
+        
+        // Simple replace for highlighting (case insensitive)
+        wrongWords.forEach(w => {
+            const regex = new RegExp(`\\b${w}\\b`, 'gi');
+            sentenceHtml = sentenceHtml.replace(regex, `<span style="color:#f00; border-bottom:1px dashed #f00;">$&</span>`);
+        });
+        
+        stagingArea.innerHTML = sentenceHtml;
+        stagingArea.style.color = wrongWords.length > 0 ? '#fff' : '#0f0';
+    }
     
     // 3. Show Result Log
     const entry = document.createElement('div');
@@ -249,7 +301,12 @@ function displayFinalSummary(responseData) {
     if (currentQuizData.words.length > 0) {
         html += `<div class="vocab-list">Difficult Words (IELTS): `;
         currentQuizData.words.forEach(w => {
-            const isWrong = wrongWords.includes(w.word);
+            // Find if this word was answered incorrectly
+            // But currentQuizResults might not have it if quiz was interrupted or something
+            // But we assume full completion here.
+            const result = currentQuizResults.find(r => r.word === w.word);
+            const isWrong = result && !result.isCorrect;
+            
             const style = isWrong ? 'color:#f00; border-bottom:1px solid #f00;' : 'color:#0f0;';
             html += `<span class="vocab-item" style="${style}" title="${w.meaning}">${w.word}</span>`;
         });
@@ -279,6 +336,7 @@ function shuffleArray(array) {
 }
 
 function addLogEntry(text, type) {
+    if (!logsContent) return;
     const entry = document.createElement('div');
     entry.className = 'log-entry';
     
@@ -291,61 +349,7 @@ function addLogEntry(text, type) {
     logsContent.prepend(entry);
 }
 
-function displayAnalysisResult(data) {
-    // data structure: 
-    // { 
-    //   current_analysis: { words: [], source: "", timestamp: ... }, 
-    //   history_matches: { "word": [ {sentence, source, timestamp}, ... ] } 
-    // }
-    
-    const analysis = data.current_analysis;
-    const history = data.history_matches || {};
-    
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
-    
-    // 1. Sentence
-    let html = `<div class="log-sentence" style="color: #fff;">${analysis.words.length > 0 ? "Analysis Result:" : "No difficult words found."}</div>`;
-    
-    // 2. Vocabulary
-    if (analysis.words && analysis.words.length > 0) {
-        html += `<div class="vocab-list">Difficult Words (IELTS): `;
-        
-        analysis.words.forEach(word => {
-            const matches = history[word];
-            const hasHistory = matches && matches.length > 0;
-            const tooltipTitle = hasHistory ? `Found in ${matches.length} past sentences` : "New word";
-            
-            html += `<span class="vocab-item" title="${tooltipTitle}">${word}</span>`;
-        });
-        
-        html += `</div>`;
-        
-        // 3. Detailed History
-        Object.keys(history).forEach(word => {
-            const matches = history[word];
-            if (matches && matches.length > 0) {
-                html += `<div class="history-info">`;
-                html += `[${word}] also appeared in:`;
-                html += `<ul style="margin: 5px 0 10px 20px; padding: 0;">`;
-                matches.forEach(m => {
-                    const dateStr = m.timestamp; // Now already a formatted string
-                    html += `<li>"${m.sentence.substring(0, 30)}..." (Source: ${m.source || 'Unknown'}) @ ${dateStr}</li>`;
-                });
-                html += `</ul>`;
-                html += `</div>`;
-            }
-        });
-    }
-
-    if (analysis.source && analysis.source !== "Unknown") {
-         html += `<div class="history-info">Guessed Source Style: ${analysis.source}</div>`;
-    }
-
-    entry.innerHTML = html;
-    logsContent.prepend(entry);
-}
-
+// ... Audio functions ...
 async function startStream() {
     if (isPlaying) return;
 
@@ -462,13 +466,15 @@ async function startStream() {
             const now = Date.now() / 1000.0;
             const latency = (now - timestamp) * 1000; // ms
             
-            latencyVal.textContent = latency.toFixed(1);
-            
-            // Color code latency
-            if (latency < 700) {
-                latencyVal.style.color = '#0f0';
-            } else {
-                latencyVal.style.color = '#f00';
+            if (latencyVal) {
+                latencyVal.textContent = latency.toFixed(1);
+                
+                // Color code latency
+                if (latency < 700) {
+                    latencyVal.style.color = '#0f0';
+                } else {
+                    latencyVal.style.color = '#f00';
+                }
             }
         };
         
@@ -520,26 +526,29 @@ function stopStream() {
     updateUI(false);
     
     // Clear canvas
-    canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+    if (canvasCtx) canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
     if (drawVisual) {
         cancelAnimationFrame(drawVisual);
     }
-    latencyVal.textContent = '--';
+    if (latencyVal) latencyVal.textContent = '--';
 }
 
 function updateUI(playing) {
-    btnPlay.disabled = playing;
-    btnStop.disabled = !playing;
-    
-    if (playing) {
-        btnPlay.innerHTML = '[ STREAMING... ]';
-    } else {
-        btnPlay.innerHTML = '[ RECEIVE STREAM ]';
+    if (btnPlay) {
+        btnPlay.disabled = playing;
+        if (playing) {
+            btnPlay.innerHTML = '[ STREAMING... ]';
+        } else {
+            btnPlay.innerHTML = '[ RECEIVE STREAM ]';
+        }
+    }
+    if (btnStop) {
+        btnStop.disabled = !playing;
     }
 }
 
 function visualize() {
-    if (!analyser) return;
+    if (!analyser || !canvasCtx || !canvas) return;
     
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);

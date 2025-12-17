@@ -46,3 +46,9 @@ Action: 由于已移除音频功能，HTTPS 不再强制。在 app.py 中注释�
 2025年12月16日 星期二 22时42分20秒 CST
 User Request: 要同时兼容http和https请求
 Action: 修改 app.py，使用 threading 同时启动 HTTP (5010端口) 和 HTTPS (5011端口) 服务。
+2025年12月16日 星期二 22时42分20秒 CST
+User Request: /open/api/analyz端口报错，The URL "file:///history" is missing a hostname.
+Action: 清理 main.js 中残留的音频和 canvas 相关代码，添加对 sentenceInput 等元素的存在性检查，避免因元素不存在导致的脚本错误。同时移除未定义的 stagingArea 引用。
+2025年12月16日 星期二 22时42分20秒 CST
+User Request: 那些旧代码不能删，就修复autoSentence就可以了
+Action: 恢复 static/js/main.js 中的所有音频/可视化代码，并添加空值检查以防止报错。同时保留并修复 autoSentence 逻辑。
