@@ -85,11 +85,17 @@ function renderHistoryList(data) {
         let vocabHtml = '';
         let words = [];
         if (Array.isArray(entry.vocabulary)) {
-            vocabHtml = entry.vocabulary.join(', ');
             words = [...entry.vocabulary];
         } else if (entry.vocabulary && typeof entry.vocabulary === 'object') {
-            vocabHtml = Object.keys(entry.vocabulary).map(w => `${w} (${entry.vocabulary[w]})`).join(', ');
             words = Object.keys(entry.vocabulary);
+        }
+        if (Array.isArray(entry.vocabulary)) {
+            vocabHtml = entry.vocabulary.map(w => `<span style="color:#0f0;font-weight:bold;">${w}</span>`).join(', ');
+        } else if (entry.vocabulary && typeof entry.vocabulary === 'object') {
+            vocabHtml = Object.keys(entry.vocabulary).map(w => {
+                const c = entry.vocabulary[w];
+                return `<span style="color:#0f0;font-weight:bold;">${w}</span> (${c})`;
+            }).join(', ');
         }
         let sentenceHtml = entry.sentence || '';
         words.sort((a, b) => b.length - a.length);
@@ -469,7 +475,7 @@ function displayFinalSummary(responseData) {
             const result = currentQuizResults.find(r => r.word === w.word);
             const isWrong = result && !result.isCorrect;
             
-            const style = isWrong ? 'color:#f00; border-bottom:1px solid #f00;' : 'color:#0f0;';
+            const style = isWrong ? 'color:#f00; border-bottom:1px solid #f00; font-weight:bold;' : 'color:#0f0; font-weight:bold;';
             html += `<span class="vocab-item" style="${style}" title="${w.meaning}">${w.word}</span>`;
         });
         html += `</div>`;
