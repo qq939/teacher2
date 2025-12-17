@@ -1,59 +1,28 @@
 // Mr.Jiang Audio Stream Client
 
-const btnPlay = document.getElementById('btn-play');
-const btnStop = document.getElementById('btn-stop');
-const latencyVal = document.getElementById('latency-val');
-const canvas = document.getElementById('visualizer');
-const canvasCtx = canvas.getContext('2d');
-
-let audioCtx = null;
-let workletNode = null;
-let scriptProcessor = null;
-let ws = null;
-let isPlaying = false;
-let analyser = null;
-let drawVisual = null;
-let queue = [];
-let buffer = new Float32Array(0);
-let lastTimestamp = 0;
-const maxQueueLength = 10;
-
 const btnSubmit = document.getElementById('btn-submit');
 const sentenceInput = document.getElementById('sentence-input');
 const logsContent = document.getElementById('logs-content');
-const stagingArea = document.getElementById('staging-area');
 
-// Quiz State
-let currentQuizData = null;
-let currentQuizResults = [];
-let currentWordIndex = 0;
-
-// Adjust canvas size
-function resizeCanvas() {
-    canvas.width = canvas.parentElement.clientWidth;
-    canvas.height = canvas.parentElement.clientHeight;
+if (btnSubmit) {
+    btnSubmit.addEventListener('click', submitSentence);
 }
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
 
-btnPlay.addEventListener('click', startStream);
-btnStop.addEventListener('click', stopStream);
-
-// New Event Listeners for Assistant
-btnSubmit.addEventListener('click', submitSentence);
-sentenceInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        submitSentence();
-    }
-});
+if (sentenceInput) {
+    sentenceInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') submitSentence();
+    });
+}
 
 // Check for autoSentence from server
 if (window.autoSentence) {
-    sentenceInput.value = window.autoSentence;
-    // Small delay to ensure UI is ready
-    setTimeout(() => {
-        submitSentence();
-    }, 100);
+    if (sentenceInput) {
+        sentenceInput.value = window.autoSentence;
+        // Small delay to ensure UI is ready
+        setTimeout(() => {
+            submitSentence();
+        }, 100);
+    }
 }
 
 async function submitSentence() {
