@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <base href="{{ url_for('index', _external=True) }}">
     <script id="auto-sentence" type="application/json">{{ auto_sentence | tojson | safe if auto_sentence else "null" }}</script>
     <title>Mr.Jiang</title>
     <style>
@@ -223,13 +222,13 @@
     <div id="log-area">
         <div style="color: #0f0; border-bottom: 1px solid #0f0; padding-bottom: 5px; margin-bottom: 10px; display: flex; align-items: center;">
             <span style="font-size: 16px; font-weight: bold; margin-right: 15px;">日志</span>
-            <a href="{{ url_for('history_page', _external=True) }}" style="font-size: 12px; color: #0f0; text-decoration: none; border: 1px solid #050; padding: 2px 8px; margin-right: auto;">[ 历史日志 ]</a>
+            <a href="/history" style="font-size: 12px; color: #0f0; text-decoration: none; border: 1px solid #050; padding: 2px 8px; margin-right: auto;">[ 历史日志 ]</a>
         </div>
         <div id="logs-content">
             <!-- Logs will appear here -->
         </div>
     </div>
     
-    <script src="{{ url_for('static', filename='js/main.js', _external=True) }}"></script>
+    <script src="/static/js/main.js"></script>
 </body>
 </html>

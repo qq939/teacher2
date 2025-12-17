@@ -77,7 +77,9 @@ if (window.autoSentence === undefined || window.autoSentence === null) {
 }
 if (window.autoSentence === undefined || window.autoSentence === null || window.autoSentence === '') {
     try {
-        const urlSentence = new URLSearchParams(window.location.search).get('auto_sentence');
+        const params = new URLSearchParams(window.location.search);
+        let urlSentence = params.get('auto_sentence');
+        if (!urlSentence) urlSentence = params.get('auto_sentance');
         if (urlSentence) window.autoSentence = urlSentence;
     } catch (e) {
         // ignore
