@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 import logging
 import os
-import datetime
+from datetime import datetime
 from assistant import assistant
 import random
 
