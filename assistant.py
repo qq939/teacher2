@@ -281,5 +281,48 @@ class Assistant:
                 matches[word] = word_matches
         return matches
 
+    def check_history(self) -> List[Dict[str, Any]]:
+        history = self._load_history()
+
+        def to_ts(ts_val):
+            if isinstance(ts_val, (int, float)):
+                return float(ts_val)
+            if isinstance(ts_val, str):
+                try:
+                    return datetime.strptime(ts_val, "%Y-%m-%d %H:%M:%S").timestamp()
+                except ValueError:
+                    try:
+                        return datetime.fromisoformat(ts_val).timestamp()
+                    except ValueError:
+                        return None
+            return None
+
+        timed = []
+        for entry in history:
+            ts = to_ts(entry.get("timestamp"))
+            if ts is None:
+                continue
+            vocab = entry.get("vocabulary")
+            if not isinstance(vocab, dict):
+                continue
+            timed.append((ts, vocab))
+
+        timed.sort(key=lambda x: x[0])
+
+        latest_counts: Dict[str, Any] = {}
+        for _, vocab in timed:
+            for word, count in vocab.items():
+                if not word:
+                    continue
+                if isinstance(count, bool):
+                    continue
+                if isinstance(count, int):
+                    latest_counts[word] = count
+                elif isinstance(count, float):
+                    latest_counts[word] = int(count) if count.is_integer() else count
+
+        sorted_items = sorted(latest_counts.items(), key=lambda kv: kv[1], reverse=True)
+        return [{"word": w, "count": c} for w, c in sorted_items]
+
 # Singleton instance or create new one in app
 assistant = Assistant()

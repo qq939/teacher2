@@ -27,6 +27,10 @@ def get_history():
     data = assistant.get_history(start_date, end_date)
     return jsonify(data)
 
+@app.route('/api/check_history', methods=['GET'])
+def check_history():
+    return jsonify(assistant.check_history())
+
 @app.route('/open/api/analyz', methods=['POST'])
 def open_api_analyze():
     data = request.get_json(force=True, silent=True) or {}
