@@ -3,7 +3,8 @@ import logging
 import os
 from urllib.parse import quote
 from assistant import assistant
-
+sentence_dict = {}
+idlist = []
 app = Flask(__name__)
 
 # Configure logging
@@ -13,7 +14,12 @@ logger = logging.getLogger(__name__)
 
 @app.route('/')
 def index():
-    auto_sentence = request.args.get('auto_sentence')
+    auto_sentence = request.args.get('auto_sentence', '')
+
+
+    auto_sentence_id = request.args.get('auto_sentence_id', '1234')
+    if auto_sentence_id != '1234':
+        auto_sentence = sentence_dict.get(auto_sentence_id, '')
     return render_template('index.html', auto_sentence=auto_sentence)
 
 @app.route('/history')
@@ -96,17 +102,25 @@ def open_api_analyze():
         return max(candidates, key=score)
 
     data = request.get_json(force=True, silent=True) or {}
-    sentence = _repair_mojibake(data.get('sentence', '')).strip().replace(r'\n', '').replace(r'\r', '')
+    sentence = _repair_mojibake(data.get('sentence', '')).strip().replace(r'\n', '').replace(r'\r', '').replace("\t", "")
+
 
     if not sentence:
         return jsonify({"error": "No sentence provided"}), 400
 
-    # 把任意字符（包括中文、空格、换行、冒号等）编码成 URL 安全的 ASCII 形式。
-    # 例如："10:40" 仍然是 "10%3A40"，避免在任何链路中被误解析。
-    encoded = quote(sentence, safe='')
+
+    cur_time = str(datetime.now().strftime("%Y%m%d%H%M%S"))
+    cur_time_random4 = cur_time + str(random.randint(0, 9999)).zfill(4)
+    global sentence_dict, idlist
+    sentence_dict[cur_time_random4] = sentence
+    idlist.append(cur_time_random4)
+    idlist = idlist[-100:]
+    sentence_dict = {k: sentence_dict[k] for k in idlist}
 
 
-    return f"http://teacher.dimond.top?auto_sentence={encoded}"
+
+
+    return f"http://teacher.dimond.top?auto_sentence_id={cur_time_random4}"
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
