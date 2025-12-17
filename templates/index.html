@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <base href="{{ url_for('index', _external=True) }}">
-    <meta name="auto-sentence" content='{{ auto_sentence | tojson | safe if auto_sentence else "null" }}'>
+    <script id="auto-sentence" type="application/json">{{ auto_sentence | tojson | safe if auto_sentence else "null" }}</script>
     <title>Mr.Jiang</title>
     <style>
         body, html {

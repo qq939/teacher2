@@ -57,12 +57,21 @@ if (sentenceInput) {
 
 // Check for autoSentence from server
 if (window.autoSentence === undefined || window.autoSentence === null) {
-    const autoSentenceMeta = document.querySelector('meta[name="auto-sentence"]');
-    if (autoSentenceMeta) {
+    const autoSentenceScript = document.getElementById('auto-sentence');
+    if (autoSentenceScript) {
         try {
-            window.autoSentence = JSON.parse(autoSentenceMeta.getAttribute('content') || 'null');
+            window.autoSentence = JSON.parse(autoSentenceScript.textContent || 'null');
         } catch (e) {
             window.autoSentence = null;
+        }
+    } else {
+        const autoSentenceMeta = document.querySelector('meta[name="auto-sentence"]');
+        if (autoSentenceMeta) {
+            try {
+                window.autoSentence = JSON.parse(autoSentenceMeta.getAttribute('content') || 'null');
+            } catch (e) {
+                window.autoSentence = null;
+            }
         }
     }
 }
