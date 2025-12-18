@@ -53,10 +53,24 @@ Action: 清理 main.js 中残留的音频和 canvas 相关代码，添加对 sen
 User Request: 那些旧代码不能删，就修复autoSentence就可以了
 Action: 恢复 static/js/main.js 中的所有音频/可视化代码，并添加空值检查以防止报错。同时保留并修复 autoSentence 逻辑。
 2025年12月17日 星期三 14时10分00秒 CST
-User Request: 仍然报错：/open/api/analyz端口报错，The URL \"file:///history\" is missing a hostname.
+User Request: 仍然报错：/open/api/analyz端口报错，The URL "file:///history" is missing a hostname.
 Action:
 1. templates/index.html: 添加 base URL，并将 /history 与 main.js 引用改为绝对 URL；auto_sentence 改为 meta 注入。
 2. static/js/main.js: 从 meta 读取 autoSentence；WebSocket 在 file:// 场景下从 document.baseURI 推导服务端地址。
 2025年12月17日 星期三 14时40分00秒 CST
 User Request: /open/api/analyz 报错 TemplateNotFound: `http://teacher.dimond.top/index.html`
 Action: app.py: /open/api/analyz 改回渲染本地模板 index.html，并注入 auto_sentence。
+2025年12月19日 星期五 10时30分00秒 CST
+User Request: 展示区生词出现全匹配问题，大段被标红
+Action: 修复 highlightSentence 函数，支持传入 wrapperFn 自定义高亮样式（红色虚线），避免直接使用 replace 导致的全匹配问题。
+
+2025年12月19日 星期五 10时35分00秒 CST
+User Request: 所有的生词匹配都采用历史日志同等匹配方式，抽象出函数，不要重复写同一个逻辑。
+Action: 将 highlightSentence 逻辑集中在 main.js 中，并移除 history.html 中的重复代码，统一使用 main.js 的实现。
+
+2025年12月19日 星期五 10时40分00秒 CST
+User Request: 当前手机端打开网页，会疯狂发热，优化手机端问题
+Action: 针对手机端发热问题进行了性能优化：
+1. 在 main.js 中实现了 renderHistoryList 和 renderVocabList 的懒加载（分页加载），每次渲染20/50条，避免一次性渲染大量 DOM 节点导致页面卡顿和发热。
+2. 重构 templates/history.html，移除重复的渲染逻辑，直接调用 main.js 中的 renderHistoryList，复用懒加载和高亮逻辑。
+3. 使用 IntersectionObserver 实现滚动到底部自动加载下一页数据。
