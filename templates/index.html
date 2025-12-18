@@ -116,11 +116,82 @@
         /* Log/Result Area */
         #log-area {
             flex: 5 1 0;
-            overflow-y: auto;
+            overflow-y: hidden;
             padding: 20px;
             font-size: 14px;
             line-height: 1.5;
             min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #logs-content {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            min-height: 0;
+            margin-bottom: 10px;
+        }
+
+        #history-content {
+            flex: 1 1 auto;
+            display: none;
+            flex-direction: column;
+            min-height: 0;
+            margin-bottom: 10px;
+        }
+
+        #history-list {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        #history-filter {
+            flex-shrink: 0;
+            margin-top: 10px;
+            margin-bottom: 0;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-top: 1px dashed #030;
+            padding-top: 10px;
+        }
+
+        #vocab-content {
+            flex: 1 1 auto;
+            display: none;
+            flex-direction: column;
+            min-height: 0;
+            margin-bottom: 10px;
+        }
+        
+        #vocab-list {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        #vocab-controls {
+            flex-shrink: 0;
+            margin-top: 10px;
+            margin-bottom: 0;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-top: 1px dashed #030;
+            padding-top: 10px;
+        }
+
+        .tabs-header {
+            flex-shrink: 0;
+            color: #0f0; 
+            border-top: 1px solid #0f0; 
+            padding-top: 10px; 
+            margin-top: auto; 
+            display: flex; 
+            align-items: center;
         }
 
         .log-entry {
@@ -235,7 +306,27 @@
         </div>
 
         <div id="log-area">
-            <div style="color: #0f0; border-bottom: 1px solid #0f0; padding-bottom: 5px; margin-bottom: 10px; display: flex; align-items: center;">
+            <div id="logs-content">
+                <!-- Logs will appear here -->
+            </div>
+            <div id="history-content" style="display:none; min-height:0; height:100%;">
+                <div id="history-list" style="overflow-y:auto; min-height:0;"></div>
+                <div id="history-filter" style="margin-bottom:10px; font-size:12px; display:flex; align-items:center; gap:10px; flex-shrink:0;">
+                    <span>Start:</span><input type="date" id="history-start" style="background:#000;border:1px solid #050;color:#0f0;">
+                    <span>End:</span><input type="date" id="history-end" style="background:#000;border:1px solid #050;color:#0f0;">
+                    <button id="history-filter-btn">[ Filter ]</button>
+                    <button id="history-download-btn" style="margin-left:auto;">[ Download JSON ]</button>
+                </div>
+            </div>
+            <div id="vocab-content" style="display:none; min-height:0; height:100%;">
+                <div id="vocab-list" style="overflow-y:auto; min-height:0;"></div>
+                <div id="vocab-controls" style="margin-bottom:10px; font-size:12px; display:flex; align-items:center; gap:10px; flex-shrink:0;">
+                    <button id="vocab-refresh-btn">[ Refresh ]</button>
+                    <span id="vocab-hint" style="margin-left:auto; color:#0a0;"></span>
+                </div>
+            </div>
+            
+            <div class="tabs-header">
                 <span style="font-size: 16px; font-weight: bold; margin-right: 15px;">日志</span>
                 <div style="margin-left: 20px;">
                     <button id="tab-log" style="font-size: 12px; padding: 2px 8px; border-color:#0f0; color:#0f0; background:transparent;">[ 实时日志 ]</button>
@@ -243,25 +334,6 @@
                     <button id="tab-vocab" style="font-size: 12px; padding: 2px 8px; border-color:#050; color:#050; background:transparent; margin-left:5px;">[ 生词本 ]</button>
                 </div>
                 <span id="history-hint" style="font-size: 12px; margin-left: auto; color:#0a0;"></span>
-            </div>
-            <div id="logs-content">
-                <!-- Logs will appear here -->
-            </div>
-            <div id="history-content" style="display:none; min-height:0; height:100%;">
-                <div id="history-filter" style="margin-bottom:10px; font-size:12px; display:flex; align-items:center; gap:10px; flex-shrink:0;">
-                    <span>Start:</span><input type="date" id="history-start" style="background:#000;border:1px solid #050;color:#0f0;">
-                    <span>End:</span><input type="date" id="history-end" style="background:#000;border:1px solid #050;color:#0f0;">
-                    <button id="history-filter-btn">[ Filter ]</button>
-                    <button id="history-download-btn" style="margin-left:auto;">[ Download JSON ]</button>
-                </div>
-                <div id="history-list" style="overflow-y:auto; min-height:0;"></div>
-            </div>
-            <div id="vocab-content" style="display:none; min-height:0; height:100%;">
-                <div style="margin-bottom:10px; font-size:12px; display:flex; align-items:center; gap:10px; flex-shrink:0;">
-                    <button id="vocab-refresh-btn">[ Refresh ]</button>
-                    <span id="vocab-hint" style="margin-left:auto; color:#0a0;"></span>
-                </div>
-                <div id="vocab-list" style="overflow-y:auto; min-height:0;"></div>
             </div>
         </div>
     </div>
