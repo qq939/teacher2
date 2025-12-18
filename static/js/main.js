@@ -32,7 +32,7 @@ function escapeRegExp(str) {
     return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function highlightSentence(sentence, words) {
+function highlightSentence(sentence, words, wrapperFn) {
     if (!sentence) return '';
     
     // Helper to find the best matching substring
@@ -110,9 +110,11 @@ function highlightSentence(sentence, words) {
     // 3. Construct HTML (escape parts outside highlights)
     let html = '';
     let lastIndex = 0;
+    const wrap = wrapperFn || (text => `<span style="color:#0f0;font-weight:bold;">${text}</span>`);
+
     merged.forEach(r => {
         html += escapeHtml(sentence.substring(lastIndex, r.start));
-        html += `<span style="color:#0f0;font-weight:bold;">${escapeHtml(sentence.substring(r.start, r.end))}</span>`;
+        html += wrap(escapeHtml(sentence.substring(r.start, r.end)));
         lastIndex = r.end;
     });
     html += escapeHtml(sentence.substring(lastIndex));
@@ -647,14 +649,12 @@ function displayFinalSummary(responseData) {
     
     // 2. Show Staging Area (highlight wrong words if any)
     if (stagingArea) {
-        let sentenceHtml = currentQuizData.sentence;
+        let sentence = currentQuizData.sentence || '';
         const wrongWords = currentQuizResults.filter(r => !r.isCorrect).map(r => r.word);
         
-        // Simple replace for highlighting (case insensitive)
-        wrongWords.forEach(w => {
-            const regex = new RegExp(`\\b${w}\\b`, 'gi');
-            sentenceHtml = sentenceHtml.replace(regex, `<span style="color:#f00; border-bottom:1px dashed #f00;">$&</span>`);
-        });
+        // Use the smart highlight logic (supports red style via wrapperFn)
+        const wrapper = (text) => `<span style="color:#f00; border-bottom:1px dashed #f00;">${text}</span>`;
+        const sentenceHtml = highlightSentence(sentence, wrongWords, wrapper);
         
         stagingArea.innerHTML = sentenceHtml;
         stagingArea.style.color = wrongWords.length > 0 ? '#fff' : '#0f0';
