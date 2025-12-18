@@ -196,13 +196,87 @@
         }
 
         function highlightSentence(sentence, words) {
-            let html = escapeHtml(sentence || '');
-            const list = (Array.isArray(words) ? words : []).filter(Boolean).sort((a, b) => b.length - a.length);
-            list.forEach(word => {
-                const escaped = escapeRegExp(word);
-                const regex = new RegExp(`(^|[^A-Za-z0-9_])(${escaped})(?=[^A-Za-z0-9_]|$)`, 'gi');
-                html = html.replace(regex, `$1<span style="color:#0f0;font-weight:bold;">$2</span>`);
+            if (!sentence) return '';
+            
+            // Helper to find the best matching substring
+            const getBestMatch = (fullText, phrase) => {
+                const check = (p) => {
+                    const escaped = escapeRegExp(p);
+                    const regex = new RegExp(`(^|[^A-Za-z0-9_])(${escaped})(?=[^A-Za-z0-9_]|$)`, 'i');
+                    return regex.test(fullText);
+                };
+
+                // 1. Exact match
+                if (check(phrase)) return phrase;
+
+                // 2. Remove common prefixes
+                const prefixes = ["one's ", "sb's ", "someone's ", "somebody's "];
+                for (let pre of prefixes) {
+                    if (phrase.toLowerCase().startsWith(pre)) {
+                        let sub = phrase.substring(pre.length);
+                        if (check(sub)) return sub;
+                    }
+                }
+
+                // 3. Sub-phrases
+                const tokens = phrase.split(/\s+/);
+                if (tokens.length > 1) {
+                    for (let len = tokens.length - 1; len >= 1; len--) {
+                         for (let i = 0; i <= tokens.length - len; i++) {
+                            let sub = tokens.slice(i, i + len).join(' ');
+                            if (len === 1 && sub.length < 3) continue; 
+                            if (check(sub)) return sub;
+                        }
+                    }
+                }
+                return null;
+            };
+
+            // 1. Identify ranges
+            let ranges = [];
+            const uniqueWords = [...new Set((Array.isArray(words) ? words : []).filter(Boolean))];
+            
+            uniqueWords.forEach(phrase => {
+                const matchPhrase = getBestMatch(sentence, phrase);
+                if (matchPhrase) {
+                     const escaped = escapeRegExp(matchPhrase);
+                     const regex = new RegExp(`(^|[^A-Za-z0-9_])(${escaped})(?=[^A-Za-z0-9_]|$)`, 'gi');
+                     let match;
+                     while ((match = regex.exec(sentence)) !== null) {
+                         const start = match.index + match[1].length;
+                         const end = start + match[2].length;
+                         ranges.push({start, end});
+                     }
+                }
             });
+
+            // 2. Merge overlapping ranges
+            ranges.sort((a, b) => a.start - b.start);
+            let merged = [];
+            if (ranges.length > 0) {
+                let current = ranges[0];
+                for (let i = 1; i < ranges.length; i++) {
+                    let next = ranges[i];
+                    if (next.start <= current.end) {
+                        current.end = Math.max(current.end, next.end);
+                    } else {
+                        merged.push(current);
+                        current = next;
+                    }
+                }
+                merged.push(current);
+            }
+
+            // 3. Construct HTML
+            let html = '';
+            let lastIndex = 0;
+            merged.forEach(r => {
+                html += escapeHtml(sentence.substring(lastIndex, r.start));
+                html += `<span style="color:#0f0;font-weight:bold;">${escapeHtml(sentence.substring(r.start, r.end))}</span>`;
+                lastIndex = r.end;
+            });
+            html += escapeHtml(sentence.substring(lastIndex));
+            
             return html;
         }
 
