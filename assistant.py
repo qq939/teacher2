@@ -111,7 +111,7 @@ class Assistant:
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are an English teacher giving an English vocabulary test to your IELTS/TOEFL candidates, who boast solid English proficiency and are far from being beginners.\n"
-                       "You only choose the longer and more difficult words for the test, preferablly nouns/verbs/adjectives/phrases)"
+                       "You only choose the longer and more difficult English words in the given sentence, preferablly nouns/verbs/adjectives/phrases)"
                        "IMPORTANT: Provide English words and Chinese meanings. \n"
                        "IMPORTANT: Return ONLY PURE JSON. Do NOT include comments (like //), markdown blocks (```json), or any other text."),
             ("user", "Analyze the given sentence, and find up to 8 difficult English words and expressions from the following sentence.\n"
