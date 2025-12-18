@@ -179,19 +179,73 @@ async function loadVocabData() {
     }
 }
 
+let fullHistoryData = [];
+let historyRenderedCount = 0;
+const HISTORY_BATCH_SIZE = 20;
+let historyObserver = null;
+
+function setupHistoryObserver() {
+    if (historyObserver) return;
+    // Ensure historyList is the root for the observer
+    if (!historyList) return;
+
+    const options = {
+        root: historyList,
+        rootMargin: '200px',
+        threshold: 0.1
+    };
+    
+    historyObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                // Unobserve current sentinel to prevent multiple triggers
+                historyObserver.unobserve(entry.target);
+                appendHistoryBatch();
+            }
+        });
+    }, options);
+}
+
 function renderHistoryList(data) {
     if (!historyList) return;
     historyList.innerHTML = '';
+    
+    // Reset observer
+    if (historyObserver) {
+        historyObserver.disconnect();
+        historyObserver = null;
+    }
+
     if (!data || data.length === 0) {
         historyList.innerHTML = '<div style="color:#aaa;">No records found.</div>';
         return;
     }
-    const sorted = [...data].sort((a, b) => {
+    
+    // Sort data
+    fullHistoryData = [...data].sort((a, b) => {
         const ta = new Date(a.timestamp).getTime() || a.timestamp;
         const tb = new Date(b.timestamp).getTime() || b.timestamp;
         return tb - ta;
     });
-    sorted.forEach(entry => {
+    
+    historyRenderedCount = 0;
+    setupHistoryObserver();
+    appendHistoryBatch();
+}
+
+function appendHistoryBatch() {
+    if (!historyList) return;
+    
+    const batch = fullHistoryData.slice(historyRenderedCount, historyRenderedCount + HISTORY_BATCH_SIZE);
+    if (batch.length === 0) return;
+    
+    // Remove old sentinel if it exists
+    const oldSentinel = document.getElementById('history-sentinel');
+    if (oldSentinel) oldSentinel.remove();
+    
+    const fragment = document.createDocumentFragment();
+    
+    batch.forEach(entry => {
         const div = document.createElement('div');
         div.style.border = '1px solid #050';
         div.style.marginBottom = '10px';
@@ -224,19 +278,83 @@ function renderHistoryList(data) {
             <div style="color:#fff;font-size:14px;margin-bottom:5px;">${sentenceHtml}</div>
             <div style="color:#0f0;font-size:12px;">Vocabulary: ${vocabHtml || 'None'}</div>
         `;
-        historyList.appendChild(div);
+        fragment.appendChild(div);
     });
+    
+    historyList.appendChild(fragment);
+    historyRenderedCount += batch.length;
+    
+    // Add sentinel if more data exists
+    if (historyRenderedCount < fullHistoryData.length) {
+        const sentinel = document.createElement('div');
+        sentinel.id = 'history-sentinel';
+        sentinel.style.height = '20px';
+        sentinel.style.textAlign = 'center';
+        sentinel.style.color = '#050';
+        sentinel.innerText = 'Loading more...';
+        historyList.appendChild(sentinel);
+        
+        if (historyObserver) historyObserver.observe(sentinel);
+    }
+}
+
+let fullVocabData = [];
+let vocabRenderedCount = 0;
+const VOCAB_BATCH_SIZE = 50;
+let vocabObserver = null;
+
+function setupVocabObserver() {
+    if (vocabObserver) return;
+    if (!vocabList) return;
+
+    const options = {
+        root: vocabList,
+        rootMargin: '200px',
+        threshold: 0.1
+    };
+    
+    vocabObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                vocabObserver.unobserve(entry.target);
+                appendVocabBatch();
+            }
+        });
+    }, options);
 }
 
 function renderVocabList(data) {
     if (!vocabList) return;
     vocabList.innerHTML = '';
+    
+    if (vocabObserver) {
+        vocabObserver.disconnect();
+        vocabObserver = null;
+    }
+
     if (!data || data.length === 0) {
         vocabList.innerHTML = '<div style="color:#aaa;">No words found.</div>';
         return;
     }
 
-    data.forEach(item => {
+    fullVocabData = [...data];
+    vocabRenderedCount = 0;
+    setupVocabObserver();
+    appendVocabBatch();
+}
+
+function appendVocabBatch() {
+    if (!vocabList) return;
+    
+    const batch = fullVocabData.slice(vocabRenderedCount, vocabRenderedCount + VOCAB_BATCH_SIZE);
+    if (batch.length === 0) return;
+
+    const oldSentinel = document.getElementById('vocab-sentinel');
+    if (oldSentinel) oldSentinel.remove();
+
+    const fragment = document.createDocumentFragment();
+
+    batch.forEach(item => {
         const word = item && item.word ? String(item.word) : '';
         const count = item && item.count !== undefined ? item.count : '';
         if (!word) return;
@@ -271,8 +389,23 @@ function renderVocabList(data) {
         row.appendChild(btn);
         row.appendChild(wordSpan);
         row.appendChild(countSpan);
-        vocabList.appendChild(row);
+        fragment.appendChild(row);
     });
+
+    vocabList.appendChild(fragment);
+    vocabRenderedCount += batch.length;
+
+    if (vocabRenderedCount < fullVocabData.length) {
+        const sentinel = document.createElement('div');
+        sentinel.id = 'vocab-sentinel';
+        sentinel.style.height = '20px';
+        sentinel.style.textAlign = 'center';
+        sentinel.style.color = '#050';
+        sentinel.innerText = 'Loading more...';
+        vocabList.appendChild(sentinel);
+        
+        if (vocabObserver) vocabObserver.observe(sentinel);
+    }
 }
 
 if (historyFilterBtn) {
