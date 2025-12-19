@@ -482,6 +482,8 @@ if (sentenceInput) {
 }
 
 if (tabLog && tabHistory && tabVocab && logsContent && historyContent && vocabContent) {
+    const logArea = document.getElementById('log-area');
+
     tabLog.addEventListener('click', () => {
         tabLog.style.borderColor = '#0f0';
         tabLog.style.color = '#0f0';
@@ -494,6 +496,10 @@ if (tabLog && tabHistory && tabVocab && logsContent && historyContent && vocabCo
         vocabContent.style.display = 'none';
         if (historyHint) historyHint.textContent = '';
         if (vocabHint) vocabHint.textContent = '';
+        
+        // Reset layout to default (6:1:7)
+        if (stagingArea) stagingArea.style.flex = "6 1 0";
+        if (logArea) logArea.style.flex = "7 1 0";
     });
     tabHistory.addEventListener('click', () => {
         tabLog.style.borderColor = '#050';
@@ -507,6 +513,11 @@ if (tabLog && tabHistory && tabVocab && logsContent && historyContent && vocabCo
         historyContent.style.flexDirection = 'column';
         vocabContent.style.display = 'none';
         if (historyHint) historyHint.textContent = '加载最近30天历史记录中...';
+        
+        // Adjust layout for History (1:1:8)
+        if (stagingArea) stagingArea.style.flex = "1 1 0";
+        if (logArea) logArea.style.flex = "8 1 0";
+        
         initHistoryView();
     });
     tabVocab.addEventListener('click', () => {
@@ -522,6 +533,11 @@ if (tabLog && tabHistory && tabVocab && logsContent && historyContent && vocabCo
         vocabContent.style.flexDirection = 'column';
         if (historyHint) historyHint.textContent = '';
         if (vocabHint) vocabHint.textContent = '加载生词本中...';
+        
+        // Adjust layout for Vocab (1:1:8)
+        if (stagingArea) stagingArea.style.flex = "1 1 0";
+        if (logArea) logArea.style.flex = "8 1 0";
+        
         initVocabView();
     });
 }
