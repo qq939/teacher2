@@ -32,6 +32,28 @@ function escapeRegExp(str) {
     return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function isValidMatch(phrase, matchedWord) {
+    if (!phrase || !matchedWord) return false;
+    const p = phrase.toLowerCase();
+    const w = matchedWord.toLowerCase();
+    if (!w.startsWith(p)) return false;
+    if (w === p) return true;
+    
+    const suffix = w.substring(p.length);
+    
+    // Common suffixes list
+    const suffixes = [
+        's', 'es', 'd', 'ed', 'ing', 'ly', 'y', 
+        'er', 'est', // Comparative
+        'ion', 'tion', 'sion', // Noun
+        'ness', 'ment', 'al', 'ity', 'ful', 'less', 'able', 'ible'
+    ];
+    
+    if (suffixes.includes(suffix)) return true;
+    
+    return false;
+}
+
 function highlightSentence(sentence, words, wrapperFn) {
     if (!sentence) return '';
     
@@ -39,12 +61,19 @@ function highlightSentence(sentence, words, wrapperFn) {
     const getBestMatch = (fullText, phrase) => {
         const check = (p) => {
             const escaped = escapeRegExp(p);
-            // Ensure word boundaries
-            const regex = new RegExp(`(^|[^A-Za-z0-9_])(${escaped})(?=[^A-Za-z0-9_]|$)`, 'i');
-            return regex.test(fullText);
+            // Allow suffix (greedy match for word chars)
+            // Note: We use [a-zA-Z]* to capture potential suffixes
+            const regex = new RegExp(`(^|[^A-Za-z0-9_])(${escaped}[a-zA-Z]*)(?=[^A-Za-z0-9_]|$)`, 'gi');
+            
+            let match;
+            while ((match = regex.exec(fullText)) !== null) {
+                // match[2] is the actual word found in text
+                if (isValidMatch(p, match[2])) return true;
+            }
+            return false;
         };
 
-        // 1. Exact match
+        // 1. Exact match (or with suffix)
         if (check(phrase)) return phrase;
 
         // 2. Remove common prefixes
@@ -80,12 +109,16 @@ function highlightSentence(sentence, words, wrapperFn) {
         const matchPhrase = getBestMatch(sentence, phrase);
         if (matchPhrase) {
              const escaped = escapeRegExp(matchPhrase);
-             const regex = new RegExp(`(^|[^A-Za-z0-9_])(${escaped})(?=[^A-Za-z0-9_]|$)`, 'gi');
+             // Use same regex pattern as in check()
+             const regex = new RegExp(`(^|[^A-Za-z0-9_])(${escaped}[a-zA-Z]*)(?=[^A-Za-z0-9_]|$)`, 'gi');
              let match;
              while ((match = regex.exec(sentence)) !== null) {
-                 const start = match.index + match[1].length;
-                 const end = start + match[2].length;
-                 ranges.push({start, end});
+                 // Verify the match again to ensure we don't highlight invalid suffixes
+                 if (isValidMatch(matchPhrase, match[2])) {
+                     const start = match.index + match[1].length;
+                     const end = start + match[2].length;
+                     ranges.push({start, end});
+                 }
              }
         }
     });
