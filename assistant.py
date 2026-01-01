@@ -25,7 +25,7 @@ class AnalysisResult(BaseModel):
     source_guess: str = Field(description="A guess of the exact source(e.g. this is a line from Friends Season 1, Episode 12 at 5 minute 13 second, and at that time xxxx)")
 
 class Assistant:
-    def __init__(self, history_file="langchain_history.json"):
+    def __init__(self, history_file="langchain/langchain_history.json"):
         self.history_file = history_file
         # Initialize LLM. 
         # Note: Expects OPENAI_API_KEY in environment variables.
