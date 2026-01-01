@@ -86,13 +86,27 @@
 - `SILICONFLOW_API_KEY`：用于调用大模型（`assistant.py` 中通过 `ChatOpenAI` 初始化）
 
 ### 启动
-
+#### 方法1 本地挂载
 在项目根目录执行：
+<pwd/.env> : 本地env文件，需要自己创建，包含 `SILICONFLOW_API_KEY` 环境变量, 例如:
 
-```bash
-python3 app.py
+```
+SILICONFLOW_API_KEY=sk-xxxx
 ```
 
-默认监听 `0.0.0.0:5010`。
+```bash
+docker run -v <pwd/.env>:/app/.env docker93939393/teacher2
 
-如果 `cert/cert.pem` 与 `cert/key.pem` 存在，会尝试配置 SSL 上下文（见 `app.py`）。
+```
+
+#### 方法2 环境变量传递
+```
+# --env-file 读取本地.env文件中的所有变量并注入容器（假设.env在当前目录）
+docker run --env-file $(pwd)/.env docker93939393/teacher2
+```
+
+#### 方法3 直接传递环境变量
+```
+# 直接传递环境变量 SILICONFLOW_API_KEY
+docker run -e SILICONFLOW_API_KEY=sk-xxxx docker93939393/teacher2
+```

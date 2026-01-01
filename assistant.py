@@ -15,7 +15,7 @@ dotenv.load_dotenv()
 class WordInfo(BaseModel):
     word: str = Field(description="The difficult English word or expression")
     meaning: str = Field(description="The correct Chinese meaning of the difficult English word or expression in the origin sentance")
-    options: List[str] = Field(description="4 options, all are wrong Chinese meanings of the difficult English word or expression")
+    options: List[str] = Field(description="counts:4, the options should be completely incorrect in meaning but formally similar to the meaning.")
 
 class AnalysisResult(BaseModel):
         # - If no word replaced, return an empty list
@@ -115,7 +115,7 @@ class Assistant:
                        "IMPORTANT: Provide English words and Chinese meanings. \n"
                        "IMPORTANT: Return ONLY PURE JSON. Do NOT include comments (like //), markdown blocks (```json), or any other text."),
             ("user", "Analyze the given sentence, and find up to 8 difficult English words and expressions from the following sentence.\n"
-                     "For each word, provide its correct Chinese meaning and 4 wrong Chinese meanings as 'options'.\n"
+                     "For each word, provide its correct Chinese meaning and 4 'options' which are completely incorrect in meaning but formally similar to the meaning.\n"
                      "Also find out the exact source(e.g. this is a line from Friends Season 1, Episode 12 at 5 minute 13 second, and at that time xxxx).\n"
                      "Sentence: {sentence}\n\n"
                      "{format_instructions}")
@@ -132,6 +132,7 @@ class Assistant:
         
         try:
             response = self.llm.invoke(formatted_prompt)
+            print("response",response,flush=True)
             # Parse output
             result = parser.parse(response.content)
             
