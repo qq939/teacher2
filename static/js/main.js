@@ -577,6 +577,8 @@ if (tabLog && tabHistory && tabVocab && logsContent && historyContent && vocabCo
 
 // Drag Resizer Logic
 const inputArea = document.getElementById('input-area');
+const dragHandleLeft = document.getElementById('drag-handle-left');
+const dragHandleRight = document.getElementById('drag-handle-right');
 const mainPanels = document.getElementById('main-panels'); // Ensure we have reference to container if needed
 
 if (inputArea && stagingArea && logsContent) {
@@ -584,14 +586,9 @@ if (inputArea && stagingArea && logsContent) {
     let startY = 0;
     let startHeight = 0;
 
-    inputArea.addEventListener('mousedown', (e) => {
-        // Prevent drag if clicking on input or button
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') {
-            return;
-        }
-        
+    const startDrag = (y) => {
         isDragging = true;
-        startY = e.clientY;
+        startY = y;
         // Get current computed height of staging area
         const rect = stagingArea.getBoundingClientRect();
         startHeight = rect.height;
@@ -607,27 +604,67 @@ if (inputArea && stagingArea && logsContent) {
         // Ensure log area takes the rest
         const logArea = document.getElementById('log-area');
         if (logArea) logArea.style.flex = '1 1 0';
-    });
+    };
 
-    document.addEventListener('mousemove', (e) => {
+    const onDrag = (y) => {
         if (!isDragging) return;
         
-        const deltaY = e.clientY - startY;
+        const deltaY = y - startY;
         const newHeight = startHeight + deltaY;
         
         // Min height constraints (e.g. 50px)
         if (newHeight > 50 && newHeight < (window.innerHeight - 150)) {
             stagingArea.style.height = `${newHeight}px`;
         }
-    });
+    };
 
-    document.addEventListener('mouseup', () => {
+    const endDrag = () => {
         if (isDragging) {
             isDragging = false;
             document.body.style.userSelect = '';
             document.body.style.cursor = '';
         }
+    };
+
+    // Mouse Events for Handles and Area (Backwards compatibility)
+    // We allow dragging from the handles OR the empty space in input-area (if handled correctly)
+    // But user specifically asked for handles. Let's bind to handles primarily.
+    
+    // Bind to handles
+    [dragHandleLeft, dragHandleRight].forEach(handle => {
+        if (!handle) return;
+        handle.addEventListener('mousedown', (e) => startDrag(e.clientY));
+        handle.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) startDrag(e.touches[0].clientY);
+            e.preventDefault(); // Prevent scrolling
+        }, { passive: false });
     });
+
+    // Keep the "drag on empty space" logic but maybe it's less needed now?
+    // User said "Make obvious sliders... instead of selecting text".
+    // So let's keep the area listener but be strict about targets.
+    inputArea.addEventListener('mousedown', (e) => {
+        // Only trigger if directly on inputArea or wrapper, not on inputs/buttons
+        // And NOT on the handles (they have their own listeners, though event bubbles)
+        // If we want handles ONLY, we can remove this block.
+        // But for "whole module dragging" requested previously, we keep it but check targets.
+        if (e.target.closest('.drag-handle-side')) return; // Handled by handle listeners
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+        
+        startDrag(e.clientY);
+    });
+    
+    // Global Move/Up
+    document.addEventListener('mousemove', (e) => onDrag(e.clientY));
+    document.addEventListener('mouseup', endDrag);
+    
+    document.addEventListener('touchmove', (e) => {
+        if (isDragging && e.touches.length > 0) {
+            onDrag(e.touches[0].clientY);
+            e.preventDefault();
+        }
+    }, { passive: false });
+    document.addEventListener('touchend', endDrag);
 }
 
 // Check for autoSentence from server

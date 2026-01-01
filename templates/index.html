@@ -84,14 +84,41 @@
         
         /* Input Area */
         #input-area {
-            padding: 20px;
+            padding: 0; /* Remove padding to let handles fill height */
             border-bottom: 1px solid #0f0;
             flex: 0 0 auto;
             display: flex;
-            align-items: center;
+            align-items: stretch; /* Stretch handles to full height */
             min-height: 0;
-            cursor: row-resize; /* Enable resize cursor for container */
-            user-select: none; /* Prevent selection while dragging starts */
+            cursor: row-resize;
+            user-select: none;
+            position: relative;
+        }
+
+        .drag-handle-side {
+            width: 30px;
+            background: rgba(0, 255, 0, 0.1);
+            border-left: 1px dashed #050;
+            border-right: 1px dashed #050;
+            cursor: row-resize;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .drag-handle-side::after {
+            content: '☰';
+            color: #0f0;
+            font-size: 20px;
+            pointer-events: none;
+        }
+
+        #input-content-wrapper {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            padding: 20px;
         }
 
         #sentence-input {
@@ -105,7 +132,7 @@
             padding: 10px 0;
             outline: none;
             margin-right: 10px;
-            cursor: text; /* Keep text cursor for input */
+            cursor: text;
             user-select: text;
         }
 
@@ -324,10 +351,14 @@
         </div>
 
         <div id="input-area">
-            <input type="text" id="sentence-input" placeholder="输入句子..." autocomplete="off">
-            <div id="input-controls">
-                <button id="btn-submit">[ 提交识别 ]</button>
+            <div class="drag-handle-side" id="drag-handle-left"></div>
+            <div id="input-content-wrapper">
+                <input type="text" id="sentence-input" placeholder="输入句子..." autocomplete="off">
+                <div id="input-controls">
+                    <button id="btn-submit">[ 提交识别 ]</button>
+                </div>
             </div>
+            <div class="drag-handle-side" id="drag-handle-right"></div>
         </div>
 
         <div id="log-area">

@@ -114,3 +114,14 @@ Action:
    - 将拖拽监听事件绑定到 #input-area。
    - 在 mousedown 事件中添加检查：如果点击目标是 INPUT 或 BUTTON，则不触发拖拽，确保输入和点击功能正常。
    - 这样用户可以在输入框模块的空白区域上下拖动来调整页面布局。
+
+2025年12月19日 星期五 11时50分00秒 CST
+User Request: 在红框的位置做出明显的滑块，以便手机、ipad等触屏能够上下滑动，而不是选中文字
+Action:
+1. index.html:
+   - 在 #input-area 左右两侧添加 `.drag-handle-side` 元素，样式为半透明绿色背景并带有 "☰" 图标，作为明显的触控拖拽区。
+   - 调整 #input-area 布局，使用 flex stretch 让手柄撑满高度。
+2. main.js:
+   - 为左右手柄添加 `touchstart` 和 `mousedown` 事件监听。
+   - 实现触摸事件处理 (`touchmove`, `touchend`)，支持在移动设备上通过滑动手柄来调整高度。
+   - 阻止默认的滚动和选择行为，确保拖拽体验流畅。
