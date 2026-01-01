@@ -85,31 +85,41 @@
         /* Input Area */
         #input-area {
             padding: 20px;
-            /* border-bottom: 1px solid #0f0;  Moved to drag-handle */
+            border-bottom: 1px solid #0f0;
             flex: 0 0 auto;
             display: flex;
             align-items: center;
             min-height: 0;
+            cursor: row-resize; /* Enable resize cursor for container */
+            user-select: none; /* Prevent selection while dragging starts */
         }
 
-        #drag-handle {
-            height: 10px;
+        #sentence-input {
+            flex-grow: 1;
             background: transparent;
-            border-bottom: 1px solid #0f0;
-            cursor: row-resize;
-            flex-shrink: 0;
-            margin-top: -5px; /* Overlap slightly or just position */
-            z-index: 10;
+            border: none;
+            border-bottom: 1px dashed #050;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 18px;
+            padding: 10px 0;
+            outline: none;
+            margin-right: 10px;
+            cursor: text; /* Keep text cursor for input */
+            user-select: text;
         }
-        
-        #drag-handle:hover {
-            background: rgba(0, 255, 0, 0.1);
+
+        #sentence-input:focus {
+            border-bottom: 1px solid #0f0;
+        }
+
+        #input-controls {
+            flex-shrink: 0;
+            cursor: default;
         }
 
         /* Log/Result Area */
         #log-area {
-            flex-grow: 1;
-            background: transparent;
             border: none;
             border-bottom: 1px dashed #050;
             color: #0f0;
@@ -319,8 +329,6 @@
                 <button id="btn-submit">[ 提交识别 ]</button>
             </div>
         </div>
-
-        <div id="drag-handle"></div>
 
         <div id="log-area">
             <div id="logs-content">

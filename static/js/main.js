@@ -576,15 +576,20 @@ if (tabLog && tabHistory && tabVocab && logsContent && historyContent && vocabCo
 }
 
 // Drag Resizer Logic
-const dragHandle = document.getElementById('drag-handle');
+const inputArea = document.getElementById('input-area');
 const mainPanels = document.getElementById('main-panels'); // Ensure we have reference to container if needed
 
-if (dragHandle && stagingArea && logsContent) {
+if (inputArea && stagingArea && logsContent) {
     let isDragging = false;
     let startY = 0;
     let startHeight = 0;
 
-    dragHandle.addEventListener('mousedown', (e) => {
+    inputArea.addEventListener('mousedown', (e) => {
+        // Prevent drag if clicking on input or button
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') {
+            return;
+        }
+        
         isDragging = true;
         startY = e.clientY;
         // Get current computed height of staging area

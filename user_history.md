@@ -105,3 +105,12 @@ Action:
    - 实现拖拽逻辑：监听 drag-handle 的 mousedown 以及 document 的 mousemove/mouseup。
    - 拖拽时，禁用 #staging-area 的 flex 属性，直接设置 height 为像素值，从而调整上下区域的比例。
 3. tips.txt: 补充 Mac VSCode 常用快捷键。
+
+2025年12月19日 星期五 11时40分00秒 CST
+User Request: 从横线上下拖动，变为整个模块上下拖动
+Action:
+1. index.html: 移除 #drag-handle 元素，并为 #input-area 添加 `cursor: row-resize` 样式。
+2. main.js:
+   - 将拖拽监听事件绑定到 #input-area。
+   - 在 mousedown 事件中添加检查：如果点击目标是 INPUT 或 BUTTON，则不触发拖拽，确保输入和点击功能正常。
+   - 这样用户可以在输入框模块的空白区域上下拖动来调整页面布局。
