@@ -575,6 +575,56 @@ if (tabLog && tabHistory && tabVocab && logsContent && historyContent && vocabCo
     });
 }
 
+// Drag Resizer Logic
+const dragHandle = document.getElementById('drag-handle');
+const mainPanels = document.getElementById('main-panels'); // Ensure we have reference to container if needed
+
+if (dragHandle && stagingArea && logsContent) {
+    let isDragging = false;
+    let startY = 0;
+    let startHeight = 0;
+
+    dragHandle.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startY = e.clientY;
+        // Get current computed height of staging area
+        const rect = stagingArea.getBoundingClientRect();
+        startHeight = rect.height;
+        
+        // Disable text selection during drag
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'row-resize';
+        
+        // Switch flex mode to fixed height mode
+        stagingArea.style.flex = 'none';
+        stagingArea.style.height = `${startHeight}px`;
+        
+        // Ensure log area takes the rest
+        const logArea = document.getElementById('log-area');
+        if (logArea) logArea.style.flex = '1 1 0';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        const deltaY = e.clientY - startY;
+        const newHeight = startHeight + deltaY;
+        
+        // Min height constraints (e.g. 50px)
+        if (newHeight > 50 && newHeight < (window.innerHeight - 150)) {
+            stagingArea.style.height = `${newHeight}px`;
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+        }
+    });
+}
+
 // Check for autoSentence from server
 if (window.autoSentence === undefined || window.autoSentence === null) {
     const autoSentenceScript = document.getElementById('auto-sentence');

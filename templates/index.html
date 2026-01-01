@@ -85,14 +85,29 @@
         /* Input Area */
         #input-area {
             padding: 20px;
-            border-bottom: 1px solid #0f0;
-            flex: 1 0 0;
+            /* border-bottom: 1px solid #0f0;  Moved to drag-handle */
+            flex: 0 0 auto;
             display: flex;
             align-items: center;
             min-height: 0;
         }
 
-        #sentence-input {
+        #drag-handle {
+            height: 10px;
+            background: transparent;
+            border-bottom: 1px solid #0f0;
+            cursor: row-resize;
+            flex-shrink: 0;
+            margin-top: -5px; /* Overlap slightly or just position */
+            z-index: 10;
+        }
+        
+        #drag-handle:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        /* Log/Result Area */
+        #log-area {
             flex-grow: 1;
             background: transparent;
             border: none;
@@ -304,6 +319,8 @@
                 <button id="btn-submit">[ 提交识别 ]</button>
             </div>
         </div>
+
+        <div id="drag-handle"></div>
 
         <div id="log-area">
             <div id="logs-content">

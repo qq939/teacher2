@@ -74,3 +74,34 @@ Action: 针对手机端发热问题进行了性能优化：
 1. 在 main.js 中实现了 renderHistoryList 和 renderVocabList 的懒加载（分页加载），每次渲染20/50条，避免一次性渲染大量 DOM 节点导致页面卡顿和发热。
 2. 重构 templates/history.html，移除重复的渲染逻辑，直接调用 main.js 中的 renderHistoryList，复用懒加载和高亮逻辑。
 3. 使用 IntersectionObserver 实现滚动到底部自动加载下一页数据。
+
+2025年12月19日 星期五 10时50分00秒 CST
+User Request: 布局比例调整为6:1:7
+Action: 修改 templates/index.html 中的 flex 布局比例：
+1. #staging-area (展示区) 设置为 flex: 6 1 0
+2. #input-area (输入区) 设置为 flex: 1 0 0
+3. #log-area (日志区) 设置为 flex: 7 1 0
+
+2025年12月19日 星期五 11时00分00秒 CST
+User Request: 在历史日志或生词本下，比例变成1:1:8
+Action: 修改 static/js/main.js 中的 Tab 切换逻辑，实现动态布局调整：
+1. 切换到“历史日志”或“生词本”时，将 #staging-area 设为 flex: 1 1 0，#log-area 设为 flex: 8 1 0。
+2. 切换回“实时日志”时，恢复默认比例（#staging-area flex: 6 1 0, #log-area flex: 7 1 0）。
+
+2025年12月19日 星期五 11时15分00秒 CST
+User Request: 比如说生词是interject，原句里的interjected也要加绿标粗。
+Action: 优化 main.js 中的 highlightSentence 函数和 getBestMatch 逻辑：
+1. 允许生词作为前缀匹配，并支持常见的英文后缀（如 -ed, -ing, -s, -ly, -tion 等）。
+2. 新增 isValidMatch 辅助函数，校验匹配到的词是否为合法的变体（前缀匹配且后缀在白名单中）。
+3. 更新 regex 逻辑，使用 `[a-zA-Z]*` 贪婪匹配后缀，并结合 isValidMatch 进行过滤，确保 "interject" 能正确匹配并高亮 "interjected"。
+
+2025年12月19日 星期五 11时30分00秒 CST
+User Request: 让这条线可以上下拖动 (截图指示输入框下方的分割线)
+Action:
+1. index.html: 
+   - 在 #input-area 下方添加 <div id="drag-handle"> 作为拖拽手柄。
+   - 修改 #input-area 为 flex: 0 0 auto，不再参与 flex 伸缩。
+2. main.js:
+   - 实现拖拽逻辑：监听 drag-handle 的 mousedown 以及 document 的 mousemove/mouseup。
+   - 拖拽时，禁用 #staging-area 的 flex 属性，直接设置 height 为像素值，从而调整上下区域的比例。
+3. tips.txt: 补充 Mac VSCode 常用快捷键。
