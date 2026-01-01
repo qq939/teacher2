@@ -85,7 +85,7 @@
 
 - `SILICONFLOW_API_KEY`：用于调用大模型（`assistant.py` 中通过 `ChatOpenAI` 初始化）
 
-### 启动
+### Docker启动
 #### 方法1 本地挂载
 在项目根目录执行：
 <pwd/.env> : 本地env文件，需要自己创建，包含 `SILICONFLOW_API_KEY` 环境变量, 例如:
@@ -109,4 +109,14 @@ docker run --env-file $(pwd)/.env docker93939393/teacher2
 ```
 # 直接传递环境变量 SILICONFLOW_API_KEY
 docker run -e SILICONFLOW_API_KEY=sk-xxxx docker93939393/teacher2
+```
+
+#### 【可选】日志挂载
+```
+# 挂载本地日志目录到容器内 /var/log/ 目录
+docker run -v $(pwd)/log:/var/log/ \
+  --log-driver=json-file \
+  --log-opt max-size=100m \
+  --log-opt max-file=3 \ 
+docker93939393/teacher2
 ```

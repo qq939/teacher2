@@ -34,6 +34,9 @@ RUN rm -rf /usr/bin/pip && ln -s /usr/bin/pip3 /usr/bin/pip
 # Create a virtual environment
 RUN cd /app && python3 -m venv /app/venv
 
+# Create log directory and set permissions
+RUN mkdir -p /var/log/ && chmod 777 /var/log/
+
 # Activate the virtual environment and install any needed packages specified in requirements.txt
 RUN cd /app && /app/venv/bin/pip install --upgrade pip && \
     /app/venv/bin/pip install -r /app/requirements.txt
@@ -42,5 +45,5 @@ RUN cd /app && /app/venv/bin/pip install --upgrade pip && \
 EXPOSE 5010
 
 # Use the Python interpreter from the virtual environment to run the application
-CMD ["/app/venv/bin/python", "/app/app.py"]
+CMD ["/bin/sh", "-c", "/app/venv/bin/python /app/app.py > /var/log/teacher2.log 2>&1"]
     
