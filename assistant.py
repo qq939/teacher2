@@ -23,7 +23,55 @@ class AnalysisResult(BaseModel):
         # - Drop words not nouns/verbs/adjectives, or overly basic beginner words
     words: List[WordInfo] = Field(description="List of difficult vocabulary words and expressions.")
     source_guess: str = Field(description="A guess of the exact source(e.g. this is a line from Friends Season 1, Episode 12 at 5 minute 13 second, and at that time xxxx)")
+# 2. 预生成合法的JSON样例（避免字符串拼接错误）
+example_json = {
+    "words": [
+        {
+            "word": "stealth fighters",
+            "meaning": "隐形战斗机",
+            "options": ["高速战斗机", "战略轰炸机", "反潜巡逻机", "预警指挥机"]
+        },
+        {
+            "word": "breakthrough",
+            "meaning": "重大突破",
+            "options": ["技术瓶颈", "难关", "新趋势", "科技进步"]
+        },
+        {
+            "word": "photon detector",
+            "meaning": "光子探测器",
+            "options": ["光电传感器", "量子传感器", "电磁波接收器", "能量转换器"]
+        },
+        {
+            "word": "electromagnetic energy",
+            "meaning": "电磁能量",
+            "options": ["电力能量", "光子能量", "热能能量", "量子能量"]
+        },
+        {
+            "word": "faintest reflection",
+            "meaning": "最微弱的反射信号",
+            "options": ["最强反射信号", "最新反射信号", "特殊反射信号", "普通反射信号"]
+        },
+        {
+            "word": "isolate",
+            "meaning": "分离",
+            "options": ["混合", "转换", "增强", "识别"]
+        },
+        {
+            "word": "quantum radar system",
+            "meaning": "量子雷达系统",
+            "options": ["常规雷达系统", "传统雷达系统", "信号处理系统", "电子干扰系统"]
+        },
+        {
+            "word": "air defense capability",
+            "meaning": "防空能力",
+            "options": ["对空攻击能力", "空中作战能力", "防空预警能力", "空中拦截能力"]
+        }
+    ],
+    "source_guess": "This is likely from a news report or online article discussing recent advancements in radar technology. The content references specific aircraft models like the F-35 and F-22, mentioning Chinese technological developments without specifying a specific TV show, movie, or book. The neutral and informative tone suggests it may be sourced from a technology or military-focused publication."
+}
 
+# 3. 生成无格式错误的JSON字符串（关键：用json.dumps转义）
+example_json_str = json.dumps(example_json, ensure_ascii=False, separators=(",", ":"))
 class Assistant:
     def __init__(self, history_file="langchain/langchain_history.json"):
         self.history_file = history_file
@@ -112,15 +160,16 @@ class Assistant:
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are an English teacher giving an English vocabulary test to your IELTS/TOEFL candidates, who boast solid English proficiency and are far from being beginners.\n"
                        "You only choose the longer and more difficult English words in the given sentence, preferablly nouns/verbs/adjectives/phrases)"
-                       "IMPORTANT: Provide English words and Chinese meanings. \n"
-                       "IMPORTANT: Return ONLY PURE JSON. Do NOT include comments (like //), markdown blocks (```json), or any other text. \n"
-                       "Example: \n"
-                       '{\n  "words": [\n    {\n      "word": "stealth fighters",\n      "meaning": "隐形战斗机",\n      "options": [\n        "高速战斗机",\n        "战略轰炸机",\n        "反潜巡逻机",\n        "预警指挥机"\n      ]\n    },\n    {\n      "word": "breakthrough",\n      "meaning": "重大突破",\n      "options": [\n        "技术瓶颈",\n        "难关",\n        "新趋势",\n        "科技进步"\n      ]\n    },\n    {\n      "word": "photon detector",\n      "meaning": "光子探测器",\n      "options": [\n        "光电传感器",\n        "量子传感器",\n        "电磁波接收器",\n        "能量转换器"\n      ]\n    },\n    {\n      "word": "electromagnetic energy",\n      "meaning": "电磁能量",\n      "options": [\n        "电力能量",\n        "光子能量",\n        "热能能量",\n        "量子能量"\n      ]\n    },\n    {\n      "word": "faintest reflection",\n      "meaning": "最微弱的反射信号",\n      "options": [\n        "最强反射信号",\n        "最新反射信号",\n        "特殊反射信号",\n        "普通反射信号"\n      ]\n    },\n    {\n      "word": "isolate",\n      "meaning": "分离",\n      "options": [\n        "混合",\n        "转换",\n        "增强",\n        "识别"\n      ]\n    },\n    {\n      "word": "quantum radar system",\n      "meaning": "量子雷达系统",\n      "options": [\n        "常规雷达系统",\n        "传统雷达系统",\n        "信号处理系统",\n        "电子干扰系统"\n      ]\n    },\n    {\n      "word": "air defense capability",\n      "meaning": "防空能力",\n      "options": [\n        "对空攻击能力",\n        "空中作战能力",\n        "防空预警能力",\n        "空中拦截能力"\n      ]\n    }\n  ],\n  "source_guess": "This is likely from a news report or online article discussing recent advancements in radar technology. The content references specific aircraft models like the F-35 and F-22, mentioning Chinese technological developments without specifying a specific TV show, movie, or book. The neutral and informative tone suggests it may be sourced from a technology or military-focused publication."\n}'),
+                       "IMPORTANT RULES:\n"
+                        "1. Provide English words and their accurate Chinese meanings.\n"
+                        "2. Return ONLY PURE JSON with NO extra text, comments, markdown, or formatting.\n"
+                    ),
             ("user", "Analyze the given sentence, and find up to 8 difficult English words and expressions from the following sentence.\n"
                      "For each word, provide its correct Chinese meaning and 4 'options' which are completely incorrect in meaning but formally similar to the meaning.\n"
                      "Also find out the exact source(e.g. this is a line from Friends Season 1, Episode 12 at 5 minute 13 second, and at that time xxxx).\n"
                      "Sentence: {sentence}\n\n"
-                     "{format_instructions}")
+                     "{format_instructions}"
+                     )
         ])
 
         # chain = prompt | self.llm | parser
